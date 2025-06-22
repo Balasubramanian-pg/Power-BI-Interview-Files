@@ -149,136 +149,151 @@ Table.TransformColumns(Source, {{"Sales", each
     *   **To break folding:** Using M functions that don't have a SQL equivalent (like `Table.AddIndexColumn`) will force Power BI to load all the data *before* continuing the transformations.
 
 ---
+## **Advanced M Query Examples**
 
-## **DAX Master Cheat Sheet**
+#### **Scenario 1: Get the Most Recent Record Within Each Category**
 
-DAX is the formula language for creating custom calculations in Power BI, Analysis Services, and Power Pivot. It is used to define **Calculated Columns** and **Measures**.
+This is a very common requirement, such as finding the latest status update for each project or the most recent purchase for each customer.
 
-#### **1. The Core Concepts: Calculated Columns vs. Measures**
+**The Scenario:**
+You have a table of product sales with multiple entries for each product on different dates. You need a table that shows only the single most recent sale (the entire row) for each unique product.
 
-This is the most fundamental concept in DAX. Understanding the difference is critical.
+**The Challenge:**
+The standard `Group By` feature only lets you aggregate data (e.g., get the `MAX` date), but it doesn't easily return the *other columns* from that specific row (like the sales amount or sales-person on that max date).
 
-| Feature | Calculated Column | Measure |
-| :--- | :--- | :--- |
-| **Calculation Time**| At **data refresh**. The result is stored in the model. | At **query time**. Calculated on-the-fly when you use it in a visual. |
-| **Storage** | **Consumes RAM and disk space.** Increases the file size. | **Does not consume RAM/space.** Only the formula is stored. |
-| **Row Context** | Evaluated **row-by-row**. It can see the values of other columns in the *same row*. | Evaluated in the **filter context** of a visual or slicer. It does not have an inherent row context. |
-| **When to Use** | When you need to **filter or slice** by the result, or see the static value for each row in a table. | For **aggregations** that respond to user interaction (e.g., Total Sales, % of Total, Year-over-Year growth). |
-| **Example** | `Price Category = IF(Products[Price] > 100, "High", "Low")` | `Total Sales = SUM(Sales[Amount])` |
+**The M Query Solution:**
+This solution groups the data by `ProductID` and then uses a list function to find the record with the maximum date within each group.
 
-**Rule of Thumb:** Use a **Measure** whenever possible. Only use a **Calculated Column** when you absolutely must.
+```m
+let
+    // Sample Data Source
+    Source = Table.FromRecords({
+        [ProductID=1, Date=#date(2023,1,10), Sales=100, Salesperson="Bob"],
+        [ProductID=2, Date=#date(2023,1,12), Sales=150, Salesperson="Sue"],
+        [ProductID=1, Date=#date(2023,1,25), Sales=120, Salesperson="Bob"], // This is the latest for Product 1
+        [ProductID=3, Date=#date(2023,1,5),  Sales=200, Salesperson="Tom"],
+        [ProductID=2, Date=#date(2023,1,18), Sales=160, Salesperson="Sue"], // This is the latest for Product 2
+        [ProductID=3, Date=#date(2023,1,20), Sales=210, Salesperson="Tom"]  // This is the latest for Product 3
+    }, type table [ProductID=Int64.Type, Date=Date.Type, Sales=Int64.Type, Salesperson=Text.Type]),
+
+    // Group the table by ProductID. This creates a nested table for each product.
+    #"Grouped Rows" = Table.Group(Source, {"ProductID"}, {
+        // Create a new column "LatestRecord" for each group.
+        // 'each' refers to the nested table of data for one ProductID.
+        {"LatestRecord", each
+            // Find the record(s) within the sub-table that have the maximum date.
+            let
+                MaxDate = List.Max([Date]) // Find the latest date in the current product's sub-table
+            in
+                Table.SelectRows(_, (row) => row[Date] = MaxDate) // Select the full row where the date matches the max date
+        , type table}
+    }),
+
+    // The "LatestRecord" column now contains a table with a single row. Expand it.
+    #"Expanded LatestRecord" = Table.ExpandTableColumn(#"Grouped Rows", "LatestRecord",
+        {"Date", "Sales", "Salesperson"}, // List the columns you want to bring out
+        {"Date", "Sales", "Salesperson"}) // New names for the expanded columns
+in
+    #"Expanded LatestRecord"
+```
+**Explanation:**
+1.  `Table.Group` bundles all rows for each `ProductID` into a nested table.
+2.  Inside the grouping, we operate on that small, nested table (`_`).
+3.  `List.Max([Date])` finds the latest date *within that specific group*.
+4.  `Table.SelectRows` then filters the nested table to find the entire row corresponding to that max date.
+5.  Finally, `Table.ExpandTableColumn` flattens the result to get the final table.
 
 ---
 
-#### **2. The Superpower of DAX: `CALCULATE()`**
+#### **Scenario 2: Conditional Join (Non-Equi Join)**
 
-If you learn only one function, make it `CALCULATE`. It is the most powerful and important function in DAX. It **modifies the filter context** to perform calculations.
+You need to join two tables where the condition is not a simple equality (`A.key = B.key`) but involves a range, like a date falling between a start and end date.
 
-**Syntax:** `CALCULATE( <expression>, <filter1>, <filter2>, ... )`
+**The Scenario:**
+You have a `Sales` table and a `Promotions` table. You want to match each sale with the promotion that was active on the sale date.
 
-*   **`<expression>`:** The measure or calculation you want to evaluate (e.g., `SUM(Sales[Amount])`).
-*   **`<filter>`:** A condition that modifies the context. It can be a simple filter or a powerful table function.
+**The Challenge:**
+The standard `Merge Queries` UI only allows joining on columns being equal. It cannot handle "between" logic (`SaleDate >= PromoStart AND SaleDate <= PromoEnd`).
 
-**Example:** Calculate sales for only the "USA". This overrides any country selection in a slicer.
-```dax
-Sales USA = CALCULATE( [Total Sales], 'Geography'[Country] = "USA" )
+**The M Query Solution:**
+We add a custom column to the `Sales` table. For each sales row, it filters the *entire* `Promotions` table to find the matching promotion and returns its name.
+
+```m
+let
+    // Sales Table
+    Sales = Table.FromRecords({
+        [SaleID=1, SaleDate=#date(2023,1,5), Amount=50],
+        [SaleID=2, SaleDate=#date(2023,1,15), Amount=120],
+        [SaleID=3, SaleDate=#date(2023,2,10), Amount=200]
+    }, type table [SaleID=Int64.Type, SaleDate=Date.Type, Amount=Int64.Type]),
+
+    // Promotions Table
+    Promotions = Table.FromRecords({
+        [PromoName="New Year Sale", StartDate=#date(2023,1,1), EndDate=#date(2023,1,10)],
+        [PromoName="Winter Special", StartDate=#date(2023,1,11), EndDate=#date(2023,1,31)],
+        [PromoName="Valentines Deal", StartDate=#date(2023,2,1), EndDate=#date(2023,2,14)]
+    }, type table [PromoName=Text.Type, StartDate=Date.Type, EndDate=Date.Type]),
+
+    // Add a custom column to the Sales table
+    #"Added Promotion" = Table.AddColumn(Sales, "Promotion Name", (CurrentSalesRow) =>
+        // For each row in the Sales table, filter the Promotions table
+        let
+            MatchingPromo = Table.SelectRows(Promotions, each
+                CurrentSalesRow[SaleDate] >= [StartDate] and
+                CurrentSalesRow[SaleDate] <= [EndDate]
+            )
+        in
+            // Get the PromoName from the first matching row. Use '?' for safety if no match is found.
+            Table.First(MatchingPromo)?[PromoName],
+        type text
+    )
+in
+    #"Added Promotion"
 ```
+**Explanation:**
+1.  `Table.AddColumn` iterates through each row of the `Sales` table. We call the context of the current row `CurrentSalesRow`.
+2.  Inside the custom column logic, `Table.SelectRows` filters the *entire* `Promotions` table based on the `SaleDate` from the `CurrentSalesRow`.
+3.  This returns a (potentially empty) table of matching promotions.
+4.  `Table.First(…)[PromoName]` extracts the name from the first record of that filtered table. The `?` (optional item operator) prevents an error if no match is found, returning `null` instead.
 
 ---
 
-#### **3. Key DAX Functions by Category**
+#### **Scenario 3: Dynamic Unpivoting**
 
-##### **A) Aggregation & Iterator Functions (`...` vs `...X`)**
+You have data where new columns are added over time (e.g., a new column for each month). You want to unpivot these columns without having to manually edit the query every time the source changes.
 
-*   **Standard Aggregators:** Operate over a single column.
-    *   `SUM()`, `AVERAGE()`, `MIN()`, `MAX()`, `COUNT()`
-    *   `DISTINCTCOUNT()`: Counts the number of unique values in a column.
-*   **Iterator Functions (`X` functions):** Operate **row-by-row** over a table, then perform an aggregation.
-    *   `SUMX(<table>, <expression>)`: Iterates the table, evaluates the expression for each row, then sums the results.
-    *   `AVERAGEX()`, `MINX()`, `MAXX()`, `COUNTX()`
+**The Scenario:**
+Your data has an `ID` column and then a separate column for each month: `Jan-23`, `Feb-23`, `Mar-23`, etc. Next month, `Apr-23` will be added. You want to unpivot these month columns dynamically.
 
-**Example:** `SUM` vs. `SUMX`
-```dax
-// Simple sum of a column (fast)
-Total Sales = SUM(Sales[Amount])
+**The Challenge:**
+The standard `Unpivot Columns` UI hardcodes the names of the columns you are unpivoting. When a new month column is added to the source file, it will be ignored by your query.
 
-// Calculate Total Revenue (Price * Quantity) for each row, then sum it up.
-// You CANNOT do SUM(Sales[Price] * Sales[Quantity]). You must use an iterator.
-Total Revenue = SUMX( Sales, Sales[Unit Price] * Sales[Quantity] )
+**The M Query Solution:**
+We get a list of all column names, remove the ones we want to keep fixed (the "ID" columns), and then use that dynamic list in the unpivot operation.
+
+```m
+let
+    Source = Table.FromRecords({
+        [StoreID="A", Region="North", #"Jan-23"=100, #"Feb-23"=110, #"Mar-23"=120],
+        [StoreID="B", Region="South", #"Jan-23"=200, #"Feb-23"=210, #"Mar-23"=220]
+    }),
+
+    // Get the list of all column names from the source table
+    AllColumnNames = Table.ColumnNames(Source),
+
+    // Define the columns you DO NOT want to unpivot
+    IDColumns = {"StoreID", "Region"},
+
+    // Create a list of columns TO UNPIVOT by removing the ID columns from the full list
+    ColumnsToUnpivot = List.RemoveItems(AllColumnNames, IDColumns),
+
+    // Perform the unpivot using the dynamic list of column names
+    #"Unpivoted Other Columns" = Table.Unpivot(Source, ColumnsToUnpivot, "Month", "Sales")
+
+in
+    #"Unpivoted Other Columns"
 ```
-
-##### **B) Filter & Context Functions (Used with `CALCULATE`)**
-
-| Function | Description | Example Use Case |
-| :--- | :--- | :--- |
-| `FILTER` | Returns a filtered table. Often used inside `CALCULATE`. | `CALCULATE( [Total Sales], FILTER('Products', [Product Color] = "Red") )` |
-| `ALL` | **Removes all filters** from a table or specific columns. | `% of Grand Total = DIVIDE( [Total Sales], CALCULATE([Total Sales], ALL(Sales)) )` |
-| `ALLEXCEPT` | **Removes all filters** *except* for the columns you specify. | Calculate subtotal for a country, ignoring product filters: `CALCULATE([Total Sales], ALLEXCEPT('Sales', 'Geography'[Country]) )` |
-| `REMOVEFILTERS`| Modern syntax for `ALL()`. More readable. | `CALCULATE( [Total Sales], REMOVEFILTERS(Products) )` |
-| `KEEPFILTERS` | Modifies the filter context without overriding it (finds the intersection). | Advanced filtering scenarios where you want to combine contexts. |
-
-##### **C) Time Intelligence Functions**
-
-**Prerequisite:** You **MUST** have a well-formed **Date Table** in your model, marked as a date table.
-
-| Function | Description |
-| :--- | :--- |
-| `TOTALYTD / QTD / MTD` | Calculates the total from the beginning of the year/quarter/month to the current date. |
-| `SAMEPERIODLASTYEAR` | Returns a set of dates from the same period in the previous year. Perfect for YoY comparisons. |
-| `DATEADD` | Shifts a set of dates by a specified interval (day, month, quarter, year). |
-| `DATESINPERIOD` | Returns a table of dates from a start date for a specified interval. |
-| `PARALLELPERIOD`| Similar to `DATEADD` but for whole periods. |
-
-**Example: Year-over-Year Sales Growth**
-```dax
-Sales Last Year = CALCULATE( [Total Sales], SAMEPERIODLASTYEAR('Date'[Date]) )
-
-Sales YoY % = DIVIDE( ([Total Sales] - [Sales Last Year]), [Sales Last Year] )
-```
-
-##### **D) Logical & Conditional Functions**
-
-| Function | Description |
-| :--- | :--- |
-| `IF` | Checks a condition and returns one value if true, another if false. |
-| `SWITCH` | A cleaner, more efficient way to handle multiple `IF` conditions. |
-| `ISBLANK` | Checks if a value or expression is blank. |
-| `COALESCE` | Returns the first expression that does not evaluate to BLANK. |
-
-**Example:** `SWITCH` is better than nested `IF`s.
-```dax
-Sales Tier =
-SWITCH(
-    TRUE(),
-    [Total Sales] > 10000, "Gold",
-    [Total Sales] > 5000, "Silver",
-    [Total Sales] > 1000, "Bronze",
-    "Basic" // Else condition
-)
-```
-
----
-
-#### **4. DAX Best Practices for Performance & Readability**
-
-1.  **Use Variables (`VAR...RETURN`):**
-    *   **Improves Readability:** Breaks down complex formulas into logical steps.
-    *   **Improves Performance:** A variable is calculated only once and reused.
-    *   **Simplifies Debugging:** You can temporarily change the `RETURN` statement to output an intermediate variable to check its value.
-
-    ```dax
-    Sales YoY % =
-    VAR SalesCurrentYear = [Total Sales]
-    VAR SalesPreviousYear = CALCULATE( [Total Sales], SAMEPERIODLASTYEAR('Date'[Date]) )
-    VAR Result = DIVIDE( (SalesCurrentYear - SalesPreviousYear), SalesPreviousYear )
-    RETURN
-        Result
-    ```
-
-2.  **Use `DIVIDE()` for Division:** Always use `DIVIDE(numerator, denominator, [alternate_result])` instead of the `/` operator. It automatically handles division-by-zero errors without breaking your visuals.
-
-3.  **Format Your Code:** Use an online tool like **DAX Formatter** or plugins in external tools to make your code neat, indented, and easy to read.
-
-4.  **Create Explicit Measures:** Do not drag raw columns into visuals. Always create a measure first (e.g., `Total Sales = SUM(Sales[Amount])`). This ensures consistent logic across your entire report.
-
-5.  **Comment Your Code:** Use `//` for single-line comments or `/* ... */` for multi-line comments to explain complex logic.
+**Explanation:**
+1.  `Table.ColumnNames(Source)` creates a list of all column headers (e.g., `{"StoreID", "Region", "Jan-23", ...}`).
+2.  `List.RemoveItems()` subtracts the list of fixed columns from the list of all columns, resulting in a dynamic list of only the month columns.
+3.  `Table.Unpivot` (the function behind the "Unpivot Other Columns" button) is used here. We explicitly tell it which columns to unpivot. Since that list is generated dynamically, the query will work even if new month columns are added later.
