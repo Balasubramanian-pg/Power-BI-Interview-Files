@@ -149,4 +149,136 @@ Table.TransformColumns(Source, {{"Sales", each
     *   **To break folding:** Using M functions that don't have a SQL equivalent (like `Table.AddIndexColumn`) will force Power BI to load all the data *before* continuing the transformations.
 
 ---
-Save this guide. It will help you solve over 90% of the data transformation challenges you'll face in Power BI. Good luck
+
+## **DAX Master Cheat Sheet**
+
+DAX is the formula language for creating custom calculations in Power BI, Analysis Services, and Power Pivot. It is used to define **Calculated Columns** and **Measures**.
+
+#### **1. The Core Concepts: Calculated Columns vs. Measures**
+
+This is the most fundamental concept in DAX. Understanding the difference is critical.
+
+| Feature | Calculated Column | Measure |
+| :--- | :--- | :--- |
+| **Calculation Time**| At **data refresh**. The result is stored in the model. | At **query time**. Calculated on-the-fly when you use it in a visual. |
+| **Storage** | **Consumes RAM and disk space.** Increases the file size. | **Does not consume RAM/space.** Only the formula is stored. |
+| **Row Context** | Evaluated **row-by-row**. It can see the values of other columns in the *same row*. | Evaluated in the **filter context** of a visual or slicer. It does not have an inherent row context. |
+| **When to Use** | When you need to **filter or slice** by the result, or see the static value for each row in a table. | For **aggregations** that respond to user interaction (e.g., Total Sales, % of Total, Year-over-Year growth). |
+| **Example** | `Price Category = IF(Products[Price] > 100, "High", "Low")` | `Total Sales = SUM(Sales[Amount])` |
+
+**Rule of Thumb:** Use a **Measure** whenever possible. Only use a **Calculated Column** when you absolutely must.
+
+---
+
+#### **2. The Superpower of DAX: `CALCULATE()`**
+
+If you learn only one function, make it `CALCULATE`. It is the most powerful and important function in DAX. It **modifies the filter context** to perform calculations.
+
+**Syntax:** `CALCULATE( <expression>, <filter1>, <filter2>, ... )`
+
+*   **`<expression>`:** The measure or calculation you want to evaluate (e.g., `SUM(Sales[Amount])`).
+*   **`<filter>`:** A condition that modifies the context. It can be a simple filter or a powerful table function.
+
+**Example:** Calculate sales for only the "USA". This overrides any country selection in a slicer.
+```dax
+Sales USA = CALCULATE( [Total Sales], 'Geography'[Country] = "USA" )
+```
+
+---
+
+#### **3. Key DAX Functions by Category**
+
+##### **A) Aggregation & Iterator Functions (`...` vs `...X`)**
+
+*   **Standard Aggregators:** Operate over a single column.
+    *   `SUM()`, `AVERAGE()`, `MIN()`, `MAX()`, `COUNT()`
+    *   `DISTINCTCOUNT()`: Counts the number of unique values in a column.
+*   **Iterator Functions (`X` functions):** Operate **row-by-row** over a table, then perform an aggregation.
+    *   `SUMX(<table>, <expression>)`: Iterates the table, evaluates the expression for each row, then sums the results.
+    *   `AVERAGEX()`, `MINX()`, `MAXX()`, `COUNTX()`
+
+**Example:** `SUM` vs. `SUMX`
+```dax
+// Simple sum of a column (fast)
+Total Sales = SUM(Sales[Amount])
+
+// Calculate Total Revenue (Price * Quantity) for each row, then sum it up.
+// You CANNOT do SUM(Sales[Price] * Sales[Quantity]). You must use an iterator.
+Total Revenue = SUMX( Sales, Sales[Unit Price] * Sales[Quantity] )
+```
+
+##### **B) Filter & Context Functions (Used with `CALCULATE`)**
+
+| Function | Description | Example Use Case |
+| :--- | :--- | :--- |
+| `FILTER` | Returns a filtered table. Often used inside `CALCULATE`. | `CALCULATE( [Total Sales], FILTER('Products', [Product Color] = "Red") )` |
+| `ALL` | **Removes all filters** from a table or specific columns. | `% of Grand Total = DIVIDE( [Total Sales], CALCULATE([Total Sales], ALL(Sales)) )` |
+| `ALLEXCEPT` | **Removes all filters** *except* for the columns you specify. | Calculate subtotal for a country, ignoring product filters: `CALCULATE([Total Sales], ALLEXCEPT('Sales', 'Geography'[Country]) )` |
+| `REMOVEFILTERS`| Modern syntax for `ALL()`. More readable. | `CALCULATE( [Total Sales], REMOVEFILTERS(Products) )` |
+| `KEEPFILTERS` | Modifies the filter context without overriding it (finds the intersection). | Advanced filtering scenarios where you want to combine contexts. |
+
+##### **C) Time Intelligence Functions**
+
+**Prerequisite:** You **MUST** have a well-formed **Date Table** in your model, marked as a date table.
+
+| Function | Description |
+| :--- | :--- |
+| `TOTALYTD / QTD / MTD` | Calculates the total from the beginning of the year/quarter/month to the current date. |
+| `SAMEPERIODLASTYEAR` | Returns a set of dates from the same period in the previous year. Perfect for YoY comparisons. |
+| `DATEADD` | Shifts a set of dates by a specified interval (day, month, quarter, year). |
+| `DATESINPERIOD` | Returns a table of dates from a start date for a specified interval. |
+| `PARALLELPERIOD`| Similar to `DATEADD` but for whole periods. |
+
+**Example: Year-over-Year Sales Growth**
+```dax
+Sales Last Year = CALCULATE( [Total Sales], SAMEPERIODLASTYEAR('Date'[Date]) )
+
+Sales YoY % = DIVIDE( ([Total Sales] - [Sales Last Year]), [Sales Last Year] )
+```
+
+##### **D) Logical & Conditional Functions**
+
+| Function | Description |
+| :--- | :--- |
+| `IF` | Checks a condition and returns one value if true, another if false. |
+| `SWITCH` | A cleaner, more efficient way to handle multiple `IF` conditions. |
+| `ISBLANK` | Checks if a value or expression is blank. |
+| `COALESCE` | Returns the first expression that does not evaluate to BLANK. |
+
+**Example:** `SWITCH` is better than nested `IF`s.
+```dax
+Sales Tier =
+SWITCH(
+    TRUE(),
+    [Total Sales] > 10000, "Gold",
+    [Total Sales] > 5000, "Silver",
+    [Total Sales] > 1000, "Bronze",
+    "Basic" // Else condition
+)
+```
+
+---
+
+#### **4. DAX Best Practices for Performance & Readability**
+
+1.  **Use Variables (`VAR...RETURN`):**
+    *   **Improves Readability:** Breaks down complex formulas into logical steps.
+    *   **Improves Performance:** A variable is calculated only once and reused.
+    *   **Simplifies Debugging:** You can temporarily change the `RETURN` statement to output an intermediate variable to check its value.
+
+    ```dax
+    Sales YoY % =
+    VAR SalesCurrentYear = [Total Sales]
+    VAR SalesPreviousYear = CALCULATE( [Total Sales], SAMEPERIODLASTYEAR('Date'[Date]) )
+    VAR Result = DIVIDE( (SalesCurrentYear - SalesPreviousYear), SalesPreviousYear )
+    RETURN
+        Result
+    ```
+
+2.  **Use `DIVIDE()` for Division:** Always use `DIVIDE(numerator, denominator, [alternate_result])` instead of the `/` operator. It automatically handles division-by-zero errors without breaking your visuals.
+
+3.  **Format Your Code:** Use an online tool like **DAX Formatter** or plugins in external tools to make your code neat, indented, and easy to read.
+
+4.  **Create Explicit Measures:** Do not drag raw columns into visuals. Always create a measure first (e.g., `Total Sales = SUM(Sales[Amount])`). This ensures consistent logic across your entire report.
+
+5.  **Comment Your Code:** Use `//` for single-line comments or `/* ... */` for multi-line comments to explain complex logic.
