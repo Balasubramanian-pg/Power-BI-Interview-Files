@@ -8,7 +8,8 @@ You are working with a Power BI report in **DirectQuery mode** and need to calcu
 - **Total Quarter-to-Date (QTD)**  
 - **Total Month-to-Date (MTD)**  
 
-However, Power BI’s time intelligence functions like `TOTALYTD()` **cannot be used** in DirectQuery mode.  
+> [!NOTE]  
+> Power BI’s time intelligence functions like `TOTALYTD()` **cannot be used** in DirectQuery mode.  
 
 ---
 
@@ -19,8 +20,8 @@ However, Power BI’s time intelligence functions like `TOTALYTD()` **cannot be 
 Total YTD = TOTALYTD([Total Sales], 'Calendar'[Date])  
 ```  
 
-- `TOTALYTD()` works only in Import mode.  
-- Requires a date table marked as a date table.  
+> [!TIP]  
+> `TOTALYTD()` works only in Import mode and requires a date table marked as a date table.  
 
 ---
 
@@ -29,6 +30,9 @@ Total YTD = TOTALYTD([Total Sales], 'Calendar'[Date])
 **Limitation**:  
 You cannot use `TOTALYTD`, `DATESYTD`, `DATESMTD`, `TOTALQTD`, etc., in DirectQuery mode.  
 You must **manually simulate** the logic using `CALCULATE`, `FILTER`, and `MAX()`.  
+
+> [!WARNING]  
+> Time intelligence functions are not supported in DirectQuery mode.  
 
 ---
 
@@ -52,6 +56,9 @@ CALCULATE(
 - `Year = MAX(Year)`: Limits calculation to the current year.  
 - `Date <= MAX(Date)`: Includes all dates up to the selected context date.  
 
+> [!IMPORTANT]  
+> This approach manually replicates the logic of `TOTALYTD()` using `CALCULATE` and `FILTER`.  
+
 ---
 
 ## **Solution for Total MTD**  
@@ -69,6 +76,9 @@ CALCULATE(
     )  
 )  
 ```  
+
+> [!TIP]  
+> Adjust the filter conditions to target the current month instead of the current year.  
 
 ---
 
@@ -88,6 +98,9 @@ CALCULATE(
 )  
 ```  
 
+> [!NOTE]  
+> This measure follows the same pattern as YTD and MTD but targets the current quarter.  
+
 ---
 
 ## **Key Insights for Interview**  
@@ -98,3 +111,13 @@ CALCULATE(
 | **Performance Consideration** | Keep the Calendar table light; DirectQuery performance depends on the SQL backend. |  
 | **Calendar Table**         | Must include columns like `Year`, `Month`, `Quarter`, `Date`.                   |  
 | **Measure Reusability**    | Design `[Total Sales]` as a separate base measure (`SUM(Sales[Amount])`).       |  
+
+> [!IMPORTANT]  
+> Understanding these limitations and workarounds is crucial for handling DirectQuery scenarios in Power BI.  
+
+---
+
+This document provides a clear, step-by-step explanation of how to calculate time-based totals in Power BI DirectQuery mode, addressing common interview questions and challenges.  
+
+> [!TIP]  
+> Practice these techniques with sample datasets to reinforce your understanding of DirectQuery limitations and workarounds.  
