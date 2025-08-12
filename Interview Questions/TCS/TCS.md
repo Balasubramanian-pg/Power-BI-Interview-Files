@@ -1,136 +1,111 @@
-### **Power BI Interview Questions & Solutions (TCS)**
+## **Combining Text from Multiple Rows**  
 
----
+**Problem**:  
+Given a table of students and their subjects, combine all subjects for each student into a single comma-separated string.  
 
-### **Question 1: Combining Text from Multiple Rows**
+**Input Example**:  
+| Name  | Subject |  
+|-------|---------|  
+| John  | English |  
+| John  | Physics |  
+| John  | Maths   |  
 
-**Problem:**
+**Expected Output**:  
+| Name  | Combined Subjects       |  
+|-------|-------------------------|  
+| John  | English, Physics, Maths |  
 
-Given a table of students and their subjects, combine all subjects for each student into a single comma-separated string.
+> [!NOTE]  
+> This problem tests your ability to use Power Query for data transformation.  
 
-**Input Example:**
+### **Solution (Power Query M Code)**  
 
-|   |   |
-|---|---|
-|Name|Subject|
-|John|English|
-|John|Physics|
-|John|Maths|
+1. **Group By Name**:  
+   - Select the table → **Transform** → **Group By**.  
+   - Group column: `Name`.  
+   - Operation: **All Rows** (creates a nested table).  
 
-**Expected Output:**
+2. **Modify M Code**:  
+   ```m  
+   = Table.Group(#"Previous Step", {"Name"}, {{"Combined Subjects", each Text.Combine([Subject], ", "), type text}})  
+   ```  
+   - Replaces `List.Sum` (default for numbers) with `Text.Combine()`.  
+   - `", "` adds a comma separator.  
 
-|   |   |
-|---|---|
-|Name|Combined Subjects|
-|John|English, Physics, Maths|
+> [!TIP]  
+> `Text.Combine()` is ideal for merging text values from lists.  
 
----
+## **Question 2: Grouping Products Without DAX**  
 
-### **Solution (Power Query M Code)**
+**Problem**:  
+Categorize iPhone models into "Old" (11/12/13) and "New" (14/15) groups.  
 
-1. **Group By Name:**
-    - Select the table → **Transform** → **Group By**
-    - Group column: `Name`
-    - Operation: **All Rows** (creates a nested table)
-2. **Modify M Code:**
-    
-    ```Plain
-    = Table.Group(#"Previous Step", {"Name"}, {{"Combined Subjects", each Text.Combine([Subject], ", "), type text}})
-    ```
-    
-    - Replaces `List.Sum` (default for numbers) with `Text.Combine()`
-    - `", "` adds a comma separator
+**Input Example**:  
+```Plain  
+Product  
+---------  
+iPhone 11  
+iPhone 12  
+iPhone 13  
+iPhone 14  
+iPhone 15  
+```  
 
-**Why This Works:**
+**Expected Output**:  
+| Category    | Products            |  
+|-------------|---------------------|  
+| Old iPhones | iPhone 11, 12, 13   |  
+| New iPhones | iPhone 14, 15       |  
 
-- `Text.Combine()` merges text values from lists
-- Preserves original values while concatenating
+> [!NOTE]  
+> This problem tests your ability to use Power BI’s UI features for ad-hoc grouping.  
 
----
+### **Solution (Power BI Data Groups)**  
 
-### **Question 2: Grouping Products Without DAX**
+1. **Select Products**:  
+   - In **Data View**, Ctrl+click to select:  
+     - iPhone 11, 12, 13 → Right-click → **Group**.  
+     - iPhone 14, 15 → Right-click → **Group**.  
+2. **Rename Groups**:  
+   - Change default names to "Old iPhones" and "New iPhones".  
 
-**Problem:**
+> [!TIP]  
+> Use **Data Groups** for static categories to avoid writing DAX.  
 
-Categorize iPhone models into "Old" (11/12/13) and "New" (14/15) groups.
+### **Comparison of Methods**  
 
-**Input Example:**
+| **Task**               | **Tool Used** | **Key Function**          |  
+|------------------------|---------------|---------------------------|  
+| Text Concatenation     | Power Query  | `Text.Combine()`          |  
+| Product Grouping       | Power BI UI  | **Data Groups** feature   |  
 
-Product
+### **Pro Tips for Interviews**  
 
----
+1. **For text merging**, always prefer `Text.Combine()` over `List.Sum`.  
+2. **Use Data Groups** when:  
+   - Categories are static (e.g., product generations).  
+   - Avoiding DAX simplifies the solution.  
 
-iPhone 11
+> [!IMPORTANT]  
+> Demonstrating knowledge of both Power Query and Power BI UI features shows versatility.  
 
----
+### **DAX Alternative for Grouping**  
 
-iPhone 12
+If you need a DAX solution for grouping:  
+```dax  
+Category =  
+SWITCH(  
+    TRUE(),  
+    'Table'[Product] IN {"iPhone 11", "iPhone 12", "iPhone 13"}, "Old iPhones",  
+    'Table'[Product] IN {"iPhone 14", "iPhone 15"}, "New iPhones",  
+    "Other"  
+)  
+```  
 
----
+> [!TIP]  
+> Use `SWITCH` for cleaner conditional logic in DAX.  
 
-iPhone 13
+This document provides clear, step-by-step solutions to common Power BI interview questions, addressing both Power Query and DAX techniques.  
 
----
-
-iPhone 14
-
----
-
-iPhone 15
-
----
-
-**Expected Output:**
-
-|   |   |
-|---|---|
-|Category|Products|
-|Old iPhones|iPhone 11, 12, 13|
-|New iPhones|iPhone 14, 15|
-
----
-
-### **Solution (Power BI Data Groups)**
-
-1. **Select Products:**
-    - In **Data View**, Ctrl+click to select:
-        - iPhone 11, 12, 13 → Right-click → **Group**
-        - iPhone 14, 15 → Right-click → **Group**
-2. **Rename Groups:**
-    - Change default names to "Old iPhones" and "New iPhones"
-
-**Key Benefit:**
-
-- No DAX required → Uses built-in **adhoc grouping**
-- Groups appear in visuals automatically
-
----
-
-### **Comparison of Methods**
-
-|   |   |   |
-|---|---|---|
-|Task|Tool Used|Key Function|
-|Text Concatenation|Power Query|`Text.Combine()`|
-|Product Grouping|Power BI UI|**Data Groups** feature|
-
----
-
-### **Pro Tips for Interviews**
-
-1. For **text merging**, always prefer `Text.Combine()` over `List.Sum`.
-2. Use **Data Groups** when:
-    - Categories are static (e.g., product generations)
-    - Avoiding DAX simplifies the solution
-
-Need a DAX alternative for grouping? Try:
-
-```Plain
-Category =
-SWITCH(
-    TRUE(),
-    'Table'[Product] IN {"iPhone 11","iPhone 12","iPhone 13"}, "Old iPhones",
-    'Table'[Product] IN {"iPhone 14","iPhone 15"}, "New iPhones",
-    "Other"
-)
-```
+> [!TIP]  
+> Practice these methods with different datasets to reinforce your understanding of data transformation and grouping in Power BI.  
