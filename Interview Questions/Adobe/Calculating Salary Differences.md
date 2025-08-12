@@ -10,8 +10,6 @@ Given a table with employee data:
 > [!NOTE]  
 > This problem tests your ability to handle relative calculations and context transitions in DAX.  
 
----
-
 ## **Solution Using `INDEX` Function**  
 
 ### **1. Key Insight**  
@@ -30,8 +28,6 @@ RETURN
     FirstSalary - [Total Salary]  
 ```  
 
----
-
 ## **How It Works**  
 
 1. **`INDEX(1,...)`**:  
@@ -47,8 +43,6 @@ RETURN
 
 > [!IMPORTANT]  
 > `INDEX` and `ALLSELECTED` are crucial for fetching the first salary without being affected by row context.  
-
----
 
 ## **Alternative Approach Using `FIRSTNONBLANK`**  
 
@@ -66,8 +60,6 @@ RETURN
 > [!TIP]  
 > `FIRSTNONBLANK` is a simpler alternative when you need the first non-blank value in a column.  
 
----
-
 ## **Key Learnings**  
 
 **Demonstrates advanced DAX functions** (`INDEX`, `ALLSELECTED`, `FIRSTNONBLANK`).  
@@ -76,8 +68,6 @@ RETURN
 
 > [!IMPORTANT]  
 > This solution highlights deep DAX knowledge, which is essential for senior Power BI roles.  
-
----
 
 This document provides a clear, step-by-step explanation of calculating salary differences in Power BI using advanced DAX techniques. It’s designed to help candidates understand and articulate the solution effectively in interviews.  
 
