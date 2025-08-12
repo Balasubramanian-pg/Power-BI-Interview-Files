@@ -1,7 +1,5 @@
 # **Calculating Female Sales in Specific Indian States**  
 
----
-
 ## **Problem Statement**  
 
 **Task**:  
