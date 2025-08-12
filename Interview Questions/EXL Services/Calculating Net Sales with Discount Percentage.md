@@ -1,4 +1,4 @@
-## **Question 1: Calculating Net Sales with Discount Percentage**  
+## **Calculating Net Sales with Discount Percentage**  
 
 ### **Problem Statement**  
 You have a sales dataset with:  
