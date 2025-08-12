@@ -1,4 +1,4 @@
-# **Power BI Interview Guide: Understanding ALL, ALLSELECTED, and ALLEXCEPT Functions**  
+# **Understanding ALL, ALLSELECTED, and ALLEXCEPT Functions**  
 
 ## **1. `ALL` Function**  
 
