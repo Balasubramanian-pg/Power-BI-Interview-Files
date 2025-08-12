@@ -40,8 +40,6 @@ CALCULATE(
 ### **Practical Insight**  
 This question tests understanding of **context transition** and how measures behave inside row context. A common rookie mistake is treating measures as direct filters—which they are not. This is a classic debugging scenario in real-world BI development.  
 
----
-
 ## **Question 2: DAX Optimization Using `SELECTEDVALUE()`**  
 
 ### **Initial DAX Pattern**  
@@ -80,8 +78,6 @@ OptimizedMeasure = SELECTEDVALUE(Sales[Country])
 ### **Practical Insight**  
 This tests awareness of modern, idiomatic DAX. Optimizing for simplicity without sacrificing accuracy is critical in production-grade dashboards.  
 
----
-
 ## **Key Takeaways for Interview Readiness**  
 
 | **Aspect**                  | **Question 1**                          | **Question 2**                          |  
@@ -91,11 +87,8 @@ This tests awareness of modern, idiomatic DAX. Optimizing for simplicity without
 | **Solution**                | Wrap filter logic in `FILTER()`         | Use `SELECTEDVALUE()` instead           |  
 | **Interview Edge**          | Shows debugging skills                  | Shows DAX fluency and performance focus |  
 
----
 
 This document highlights common pitfalls and best practices in DAX, emphasizing both debugging techniques and optimization strategies. It’s designed to prepare candidates for technical interviews focusing on DAX and Power BI development.  
 
 > [!TIP]  
 > Practice these patterns with real-world datasets to reinforce your understanding of DAX optimization and error handling.  
-
----
