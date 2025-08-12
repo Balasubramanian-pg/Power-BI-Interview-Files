@@ -108,5 +108,3 @@ This tests awareness of **modern, idiomatic DAX**. `SELECTEDVALUE()` is a **perf
 |Interview Edge|Shows debugging skills|Shows DAX fluency and performance focus|
 
 ---
-
-Would you like both examples converted into a **Power BI PBIX file** with visuals for showcasing in training or a client engagement? Or do you want them stylized as **technical flashcards for internal team onboarding**?
