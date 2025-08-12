@@ -24,8 +24,6 @@
 Total Sales = SUM(Sales[Sales Value])  
 ```  
 
----
-
 ## **Question 1: How do you differentiate between TOTALYTD and DATESYTD functions?**  
 
 ### **Answer:**  
@@ -51,8 +49,6 @@ Total Sales = SUM(Sales[Sales Value])
 
 > [!TIP]  
 > Use `TOTALYTD` for direct calculations and `DATESYTD` for creating custom filter contexts.  
-
----
 
 ## **Question 2: Can you use DATESYTD function within TOTALYTD function?**  
 
@@ -80,8 +76,6 @@ Both methods return the same result: **3315**.
 > [!NOTE]  
 > Using `DATESYTD` within `TOTALYTD` is redundant but demonstrates understanding of filter contexts.  
 
----
-
 ## **Question 3: How do you calculate year-to-date value using DATESYTD function specifically, without using TOTALYTD?**  
 
 ### **Solution Code:**  
@@ -104,8 +98,6 @@ CALCULATE(
 
 > [!IMPORTANT]  
 > This method is useful when you need to combine multiple filter conditions or customize the date logic.  
-
----
 
 ## **Complete DAX Code Examples**  
 
@@ -135,8 +127,6 @@ This demonstrates:
 2. `CALCULATE` + `DATESYTD` can replace `TOTALYTD` functionality.  
 3. Multiple approaches exist for year-to-date calculations in Power BI.  
 
----
-
 ## **Interview Key Points**  
 
 **Remember these talking points:**  
@@ -144,8 +134,6 @@ This demonstrates:
 - `DATESYTD` generates the date context, while `TOTALYTD` applies it directly to calculations.  
 - Understanding both approaches gives flexibility in complex scenarios.  
 - The choice between methods often depends on performance requirements and measure complexity.  
-
----
 
 ## **When to Use Each Approach**  
 
