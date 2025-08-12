@@ -1,7 +1,5 @@
 # **Extracting Values and Dynamic Titles**  
 
----
-
 ## **Scenario 1: Extracting First Non-Blank Value Across Columns**  
 
 ### **Problem Statement**  
