@@ -7,8 +7,6 @@
 > [!NOTE]  
 > This question tests your understanding of Power Query joins and the unique way Power BI handles null values.  
 
----
-
 ## **Key Concept: Null Value Behavior in Power BI**  
 
 **Critical Interview Point:** In Power BI Power Query, `null = null` evaluates to `TRUE`, which is different from SQL where `null ≠ null`.  
@@ -31,8 +29,6 @@ if [Column A] = [Column B] then 1 else 0
 
 > [!IMPORTANT]  
 > Power BI treats `null = null` as `TRUE`, which is a fundamental difference from SQL.  
-
----
 
 ## **Sample Data Setup**  
 
@@ -58,8 +54,6 @@ null
 ```  
 
 **Common Values**: 5, null, 10 (these will match in joins).  
-
----
 
 ## **Join Operations & Expected Results**  
 
@@ -137,9 +131,6 @@ null   ← Matching
 6      ← Right anti  
 12     ← Right anti  
 ```  
-
----
-
 ## **Power Query M Code Example**  
 
 ```m  
@@ -160,9 +151,6 @@ null   ← Matching
     JoinKind.Inner  // or LeftOuter, RightOuter, LeftAnti, RightAnti, FullOuter  
 )  
 ```  
-
----
-
 ## **Interview Key Points**  
 
 1. **Null Behavior**: Unlike SQL, Power BI treats `null = null` as `TRUE`.  
@@ -173,8 +161,6 @@ null   ← Matching
 > [!WARNING]  
 > Be aware of null handling differences when migrating SQL-based solutions to Power BI.  
 
----
-
 ## **Why This Matters**  
 
 This difference in null handling can lead to unexpected results when migrating from SQL-based solutions to Power BI, making it a crucial interview topic for Power BI developers.  
@@ -182,11 +168,7 @@ This difference in null handling can lead to unexpected results when migrating f
 > [!TIP]  
 > Practice join operations with null values in Power Query to reinforce your understanding of this behavior.  
 
----
-
 This document provides a clear explanation of Power BI join operations and their behavior with null values, highlighting key differences from SQL. It’s designed to help candidates understand and articulate these concepts effectively in interviews.  
 
 > [!TIP]  
 > Use sample datasets to experiment with different join types and observe how null values affect the results.  
-
----
