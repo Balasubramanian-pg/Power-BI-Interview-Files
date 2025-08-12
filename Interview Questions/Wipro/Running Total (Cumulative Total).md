@@ -1,4 +1,4 @@
-# **Running Total (Cumulative Total) - Interview Question & Solution**  
+# **Running Total (Cumulative Total)**  
 
 ## **Interview Question**  
 
