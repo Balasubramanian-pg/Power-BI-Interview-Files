@@ -11,16 +11,11 @@ You are given two **unconnected tables**:
 > [!NOTE]  
 > This problem tests your ability to manipulate filter contexts in DAX without relying on relationships.  
 
----
-
 ## **Problem Statement**  
-
 How can you compute aggregated sales (`SalesValue`) for the subset of years available in the Calendar table, despite no direct relationship between the tables?  
 
 > [!IMPORTANT]  
 > The challenge is to filter the Sales table based on the Calendar table without a relationship.  
-
----
 
 ## **DAX Solution Using `TREATAS()`**  
 
@@ -34,9 +29,6 @@ CALCULATE(
     )  
 )  
 ```  
-
----
-
 ## **Explanation**  
 
 1. **`CALCULATE`**: Modifies the filter context for the calculation.  
@@ -46,8 +38,6 @@ CALCULATE(
 
 > [!TIP]  
 > `TREATAS()` is the key function here, as it allows you to apply a filter from one table to another without a relationship.  
-
----
 
 ## **Output Verification**  
 
@@ -67,8 +57,6 @@ Years 2018 and 2019 are ignored because they are not present in the Calendar tab
 > [!IMPORTANT]  
 > This demonstrates that `TREATAS()` successfully filters the Sales table based on the Calendar table’s years.  
 
----
-
 ## **Interview Tip**  
 
 When posed with disconnected tables and a filtering requirement:  
@@ -78,8 +66,6 @@ When posed with disconnected tables and a filtering requirement:
 
 > [!TIP]  
 > Highlighting `TREATAS()` shows advanced DAX knowledge and problem-solving skills.  
-
----
 
 ## **Visual Diagram Suggestion**  
 
@@ -91,9 +77,7 @@ For training or internal documentation, consider a diagram showing:
 > [!NOTE]  
 > A visual diagram can help reinforce the concept of `TREATAS()` as a "virtual filter" across tables.  
 
----
-
-This document provides a clear, step-by-step explanation of using `TREATAS()` to solve a common DAX filtering problem. It’s designed to help candidates understand and articulate the solution effectively in interviews.  
+This document provides a clear, step-by-step explanation of using `TREATAS()` to solve a common DAX filtering problem. It’s designed to help candidates understand and articulate the solution effectively in interviews. 
 
 > [!TIP]  
 > Practice this pattern with different datasets to reinforce your understanding of `TREATAS()` and filter context manipulation.  
