@@ -39,8 +39,6 @@ The video discusses a **Power BI interview question** where you need to **rank r
 > [!IMPORTANT]  
 > The ranking must be done **within each state**, not globally.  
 
----
-
 ## **Solution: Using `RANKX` with Filtering**  
 
 Since `RANKX` alone ranks across the entire table, we need to **filter by state first** before ranking.  
@@ -63,8 +61,6 @@ VAR FinalRank =
 RETURN FinalRank  
 ```  
 
----
-
 ### **How It Works**  
 
 1. **`MAX('Table'[State])`**  
@@ -81,8 +77,6 @@ RETURN FinalRank
 > [!TIP]  
 > Use `FILTER` with `ALL` to isolate records for the current state and ensure accurate ranking.  
 
----
-
 ### **Key Takeaways**  
 
 1. **`RANKX` alone ranks globally**—you need **filtering** to rank within groups.  
@@ -94,8 +88,6 @@ RETURN FinalRank
 > - Use **row context** in measures.  
 > - Combine `RANKX` with filtering.  
 > - Handle **multi-column ranking logic**.  
-
----
 
 ### **Alternative Approach (Simpler)**  
 
@@ -112,8 +104,6 @@ RANKX(
 
 > [!NOTE]  
 > This approach leverages relationships and `SELECTEDVALUE` for simpler filtering.  
-
----
 
 This document provides a clear, step-by-step explanation of ranking records within groups in Power BI, addressing common interview questions and challenges.  
 
