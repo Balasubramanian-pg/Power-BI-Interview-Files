@@ -10,8 +10,6 @@
 > [!TIP]  
 > Choose `LOOKUPVALUE` for flexibility and `RELATED` for performance in relational models.  
 
----
-
 ## **LOOKUPVALUE Deep Dive**  
 
 ### **Syntax Structure**  
@@ -24,8 +22,6 @@ LOOKUPVALUE(
     [search_columnName2, search_value2,...] // Optional additional conditions  
 )  
 ```  
-
----
 
 ### **Practical Example from Video**  
 
@@ -46,15 +42,11 @@ LOOKUPVALUE(
 > [!IMPORTANT]  
 > This mimics Excel’s `VLOOKUP` but is more flexible and context-aware.  
 
----
-
 ### **How It Works**  
 
 1. **For each row in `Product` table**:  
    - Searches `Discount` table for a matching product name.  
    - Returns the corresponding `Discount%` value.  
-
----
 
 ### **Advanced Considerations**  
 
@@ -84,22 +76,17 @@ LOOKUPVALUE(
 > [!WARNING]  
 > `LOOKUPVALUE` can be slow on large datasets due to row-by-row operations.  
 
----
-
 ### **When to Use LOOKUPVALUE**  
 
 **No Relationship** scenarios  
 **Ad-hoc analysis** requiring flexible lookups  
 **Complex conditions** (multiple column matches)  
 
----
-
 ### **When to Avoid**  
 
 **Large datasets** (use relationships + `RELATED`)  
 **Frequent calculations** (creates row-by-row operations)  
 
----
 
 ### **Pro Tip for Interviews**  
 
@@ -111,11 +98,7 @@ Demonstrate understanding of:
 > [!TIP]  
 > Highlight scenarios where `LOOKUPVALUE` is the only solution (e.g., no relationships).  
 
----
-
 This document provides a clear comparison between `LOOKUPVALUE` and `RELATED`, along with practical examples and best practices. It’s designed to help candidates understand when and how to use each function effectively in Power BI.  
 
 > [!TIP]  
 > Practice creating calculated columns and measures using `LOOKUPVALUE` and `RELATED` to reinforce your understanding.  
-
----
