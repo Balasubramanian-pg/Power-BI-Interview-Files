@@ -11,8 +11,6 @@ You are working with a Power BI report in **DirectQuery mode** and need to calcu
 > [!NOTE]  
 > Power BI’s time intelligence functions like `TOTALYTD()` **cannot be used** in DirectQuery mode.  
 
----
-
 ## **Approach in Import Mode (For Comparison)**  
 
 ### **DAX Measure (Import Mode)**:  
@@ -23,8 +21,6 @@ Total YTD = TOTALYTD([Total Sales], 'Calendar'[Date])
 > [!TIP]  
 > `TOTALYTD()` works only in Import mode and requires a date table marked as a date table.  
 
----
-
 ## **Challenge in DirectQuery Mode**  
 
 **Limitation**:  
@@ -33,8 +29,6 @@ You must **manually simulate** the logic using `CALCULATE`, `FILTER`, and `MAX()
 
 > [!WARNING]  
 > Time intelligence functions are not supported in DirectQuery mode.  
-
----
 
 ## **Solution in DirectQuery Mode**  
 
@@ -59,8 +53,6 @@ CALCULATE(
 > [!IMPORTANT]  
 > This approach manually replicates the logic of `TOTALYTD()` using `CALCULATE` and `FILTER`.  
 
----
-
 ## **Solution for Total MTD**  
 
 ### **DAX Measure: Total MTD**  
@@ -79,8 +71,6 @@ CALCULATE(
 
 > [!TIP]  
 > Adjust the filter conditions to target the current month instead of the current year.  
-
----
 
 ## **Solution for Total QTD**  
 
@@ -101,8 +91,6 @@ CALCULATE(
 > [!NOTE]  
 > This measure follows the same pattern as YTD and MTD but targets the current quarter.  
 
----
-
 ## **Key Insights for Interview**  
 
 | **Topic**                  | **Explanation**                                                                 |  
@@ -114,8 +102,6 @@ CALCULATE(
 
 > [!IMPORTANT]  
 > Understanding these limitations and workarounds is crucial for handling DirectQuery scenarios in Power BI.  
-
----
 
 This document provides a clear, step-by-step explanation of how to calculate time-based totals in Power BI DirectQuery mode, addressing common interview questions and challenges.  
 
