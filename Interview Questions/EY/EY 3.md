@@ -1,107 +1,110 @@
----
-Pattern:
-  - Regex
----
-### **Power BI Interview Solution: Creating a Category Column with DAX**
+# **Creating a Category Column with DAX**  
 
 ---
 
-### **Problem Statement**
+## **Problem Statement**  
 
-**Given:**
+**Given**:  
+A table with a "Product name" column containing various product names (e.g., "Mountain Bike", "Helmet", "Road Bike").  
 
-A table with a "Product name" column containing various product names (e.g., "Mountain Bike", "Helmet", "Road Bike").
+**Task**:  
+Create a calculated "Category" column that:  
+- Assigns **"bike"** if the product name contains the word "bike".  
+- Assigns **"accessories"** otherwise.  
 
-**Task:**
-
-Create a calculated "Category" column that:
-
-- Assigns **"bike"** if the product name contains the word "bike"
-- Assigns **"accessories"** otherwise
-
----
-
-### **Solution Using DAX**
-
-### **1. Best Approach:** `**SWITCH**` **+** `**CONTAINSSTRING**`
-
-```Plain
-Category =
-SWITCH(
-    TRUE(),
-    CONTAINSSTRING('Products'[Product name], "bike"), "bike",
-    "accessories"
-)
-```
-
-**How It Works:**
-
-- `CONTAINSSTRING()` checks if "bike" exists in the product name (case-insensitive)
-- `SWITCH(TRUE(), ...)` acts like an IF-ELSE chain
-- Returns "bike" if found, otherwise "accessories"
+> [!NOTE]  
+> This problem tests your ability to use DAX for text manipulation and conditional logic.  
 
 ---
 
-### **2. Alternative Solutions**
+## **Solution Using DAX**  
 
-**Option A: Using** `**IF**`
+### **1. Best Approach: `SWITCH` + `CONTAINSSTRING`**  
 
-```Plain
-Category =
-IF(
-    CONTAINSSTRING('Products'[Product name], "bike"),
-    "bike",
-    "accessories"
-)
-```
+```dax  
+Category =  
+SWITCH(  
+    TRUE(),  
+    CONTAINSSTRING('Products'[Product Name], "bike"), "bike",  
+    "accessories"  
+)  
+```  
 
-**Option B: Case-Sensitive Check**
+**How It Works**:  
+- `CONTAINSSTRING()` checks if "bike" exists in the product name (case-insensitive).  
+- `SWITCH(TRUE(), ...)` acts like an IF-ELSE chain.  
+- Returns "bike" if found, otherwise "accessories".  
 
-```Plain
-Category =
-SWITCH(
-    TRUE(),
-    SEARCH("bike", 'Products'[Product name], 1, 0) > 0, "bike",
-    "accessories"
-)
-```
-
-_Note:_ `SEARCH` is case-insensitive; use `FIND` for case-sensitive matching.
+> [!TIP]  
+> `SWITCH` is more readable than nested `IF` statements for multiple conditions.  
 
 ---
 
-### **Key Concepts Demonstrated**
+### **2. Alternative Solutions**  
 
-✅ **Text Functions**: `CONTAINSSTRING`/`SEARCH` for pattern matching
+**Option A: Using `IF`**  
+```dax  
+Category =  
+IF(  
+    CONTAINSSTRING('Products'[Product Name], "bike"),  
+    "bike",  
+    "accessories"  
+)  
+```  
 
-✅ **Conditional Logic**: `SWITCH` vs `IF` statements
+**Option B: Case-Sensitive Check**  
+```dax  
+Category =  
+SWITCH(  
+    TRUE(),  
+    FIND("bike", 'Products'[Product Name], 1, 0) > 0, "bike",  
+    "accessories"  
+)  
+```  
 
-✅ **Calculated Columns**: Creating new columns with DAX
+> [!IMPORTANT]  
+> Use `FIND` for case-sensitive matching instead of `SEARCH`.  
 
 ---
 
-### **Example Output**
+### **Key Concepts Demonstrated**  
 
-|   |   |
-|---|---|
-|Product Name|Category|
-|Mountain Bike|bike|
-|Cycling Helmet|accessories|
-|Road Bike|bike|
-|Tire Pump|accessories|
+✅ **Text Functions**: `CONTAINSSTRING`/`SEARCH`/`FIND` for pattern matching.  
+✅ **Conditional Logic**: `SWITCH` vs `IF` statements.  
+✅ **Calculated Columns**: Creating new columns with DAX.  
 
 ---
 
-### **Why This Matters in Interviews**
+### **Example Output**  
 
-- Tests knowledge of **DAX text functions**
-- Demonstrates **conditional logic** implementation
-- Shows understanding of **calculated vs. measure** columns
+| Product Name       | Category    |  
+|--------------------|-------------|  
+| Mountain Bike      | bike        |  
+| Cycling Helmet     | accessories |  
+| Road Bike          | bike        |  
+| Tire Pump          | accessories |  
 
-**Pro Tip:** For production datasets, consider:
+---
 
-1. Adding error handling (e.g., for BLANK values)
-2. Creating a separate dimension table for categories
-3. Using Power Query for complex text transformations
+### **Why This Matters in Interviews**  
 
-Would you like me to expand on any part of this solution? 🚀
+- Tests knowledge of **DAX text functions**.  
+- Demonstrates **conditional logic** implementation.  
+- Shows understanding of **calculated columns** vs. measures.  
+
+> [!TIP]  
+> Highlight the choice of `SWITCH` over `IF` for better readability and maintainability.  
+
+**Pro Tip**: For production datasets, consider:  
+1. Adding error handling (e.g., for `BLANK` values).  
+2. Creating a separate dimension table for categories.  
+3. Using Power Query for complex text transformations.  
+
+---
+
+This document provides a clear, step-by-step explanation of creating a category column in Power BI using DAX, addressing common interview questions and challenges.  
+
+> [!TIP]  
+> Practice this pattern with different datasets to reinforce your understanding of text manipulation and conditional logic in DAX.  
+
+---
