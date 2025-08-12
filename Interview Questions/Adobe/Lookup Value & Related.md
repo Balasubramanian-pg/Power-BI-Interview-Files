@@ -88,16 +88,16 @@ LOOKUPVALUE(
 
 ### **When to Use LOOKUPVALUE**  
 
-✅ **No Relationship** scenarios  
-✅ **Ad-hoc analysis** requiring flexible lookups  
-✅ **Complex conditions** (multiple column matches)  
+**No Relationship** scenarios  
+**Ad-hoc analysis** requiring flexible lookups  
+**Complex conditions** (multiple column matches)  
 
 ---
 
 ### **When to Avoid**  
 
-❌ **Large datasets** (use relationships + `RELATED`)  
-❌ **Frequent calculations** (creates row-by-row operations)  
+**Large datasets** (use relationships + `RELATED`)  
+**Frequent calculations** (creates row-by-row operations)  
 
 ---
 
