@@ -26,8 +26,6 @@ RETURN Result
 2. **Readability**: Variables break the calculation into logical steps.  
 3. **Performance**: Variables are calculated once, reducing redundant computations.  
 
----
-
 ## **2. Star Schema vs. Snowflake Schema**  
 
 These are two common data modeling designs used in data warehousing and BI.  
@@ -43,8 +41,6 @@ These are two common data modeling designs used in data warehousing and BI.
 > [!TIP]  
 > **For Power BI**, always transform a snowflake schema into a star schema in Power Query for better performance.  
 
----
-
 ## **3. What Are Dataflows in Power BI?**  
 
 **Dataflows** are a **cloud-based, self-service data preparation** feature in Power BI.  
@@ -57,8 +53,6 @@ These are two common data modeling designs used in data warehousing and BI.
 
 > [!NOTE]  
 > Dataflows are ideal for creating a "Golden Dataset" used across multiple reports.  
-
----
 
 ## **4. Different Refresh Types in Power BI**  
 
@@ -77,8 +71,6 @@ The refresh type depends on the **Data Connection Mode** (Import, DirectQuery, L
 
 > [!WARNING]  
 > DirectQuery/Live Connection modes bypass the data model, so performance depends on the source system.  
-
----
 
 ## **5. Challenges During Report Development**  
 
@@ -103,8 +95,6 @@ Common challenges and solutions:
 > [!TIP]  
 > Always start with a prototype to align expectations early.  
 
----
-
 ## **6. Field Parameters**  
 
 **Field Parameters** allow users to dynamically change measures or dimensions in a visual.  
@@ -116,7 +106,6 @@ Common challenges and solutions:
 > [!NOTE]  
 > Enhances interactivity and reduces the need for multiple visuals.  
 
----
 
 ## **7. Keeping Default Total Sales Values with Filters**  
 
@@ -143,8 +132,6 @@ CALCULATE([Total Sales], ALLEXCEPT('FactSales', 'Date'[Date]))
 > [!IMPORTANT]  
 > Use `REMOVEFILTERS()` or `ALL()` to reset filter contexts selectively.  
 
----
-
 ## **8. Row-Level Security (RLS)**  
 
 **RLS** restricts data access at the row level based on user roles.  
@@ -160,8 +147,6 @@ CALCULATE([Total Sales], ALLEXCEPT('FactSales', 'Date'[Date]))
 
 > [!TIP]  
 > Dynamic RLS is more scalable for large organizations.  
-
----
 
 ## **9. Custom Sorting of Categories**  
 
@@ -186,8 +171,6 @@ To sort a category column (e.g., `c, d, a, b`) in a specific order:
 
 > [!NOTE]  
 > This method ensures the visual respects the custom order.  
-
----
 
 This document covers advanced Power BI concepts, providing solutions to common challenges and best practices for optimization and data modeling.  
 
