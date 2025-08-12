@@ -2,7 +2,6 @@
 
 This repository contains a curated collection of Power BI interview questions, DAX patterns, and problem-solving scenarios, categorized by the companies that frequently use them in their technical assessments. This guide serves as a central index for navigating these resources.
 
----
 
 ## Accenture
 
