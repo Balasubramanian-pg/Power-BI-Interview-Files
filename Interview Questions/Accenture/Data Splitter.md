@@ -21,8 +21,6 @@
 | Mike  | Maths    |  
 | Alice | English  |  
 
----
-
 ## **Step-by-Step Solution in Power Query**  
 
 ### **1. Split Subjects into Separate Columns**  
@@ -70,9 +68,6 @@ let
 in
     Trimmed
 ```  
-
----
-
 ## **Alternative Method (Using `Text.Split`)**  
 
 For more control, you could:  
@@ -96,23 +91,17 @@ in
 > [!TIP]  
 > This method is more flexible and works well when the number of subjects varies significantly.  
 
----
-
 ## **Key Concepts Tested**  
 
-✅ **Data Normalization**: Converting comma-separated values into a structured format.  
-✅ **Power Query Skills**: Splitting, unpivoting, and cleaning data.  
-✅ **Efficiency**: Choosing the simplest method for the task.  
-
----
+**Data Normalization**: Converting comma-separated values into a structured format.  
+**Power Query Skills**: Splitting, unpivoting, and cleaning data.  
+**Efficiency**: Choosing the simplest method for the task.  
 
 ## **Why This Matters in Interviews**  
 
 - **Demonstrates your ability to reshape data** for analysis.  
 - **Shows proficiency in Power Query**, a critical tool for ETL in Power BI.  
 - **Highlights problem-solving** for common real-world data issues.  
-
----
 
 ## **Final Output**  
 
@@ -125,11 +114,7 @@ in
 | Mike  | Maths    |  
 | Alice | English  |  
 
----
-
 This document provides a clear, step-by-step guide to solving a common data transformation problem in Power BI using Power Query. It includes both UI-based and M code solutions, making it suitable for both beginners and advanced users.  
 
 > [!TIP]  
 > Practice this transformation with different datasets to reinforce your Power Query skills and prepare for similar interview questions.  
-
----
