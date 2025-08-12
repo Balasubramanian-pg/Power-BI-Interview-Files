@@ -1,7 +1,5 @@
 # **Creating a Category Column with DAX**  
 
----
-
 ## **Problem Statement**  
 
 **Given**:  
@@ -14,8 +12,6 @@ Create a calculated "Category" column that:
 
 > [!NOTE]  
 > This problem tests your ability to use DAX for text manipulation and conditional logic.  
-
----
 
 ## **Solution Using DAX**  
 
@@ -37,8 +33,6 @@ SWITCH(
 
 > [!TIP]  
 > `SWITCH` is more readable than nested `IF` statements for multiple conditions.  
-
----
 
 ### **2. Alternative Solutions**  
 
@@ -69,11 +63,9 @@ SWITCH(
 
 ### **Key Concepts Demonstrated**  
 
-✅ **Text Functions**: `CONTAINSSTRING`/`SEARCH`/`FIND` for pattern matching.  
-✅ **Conditional Logic**: `SWITCH` vs `IF` statements.  
-✅ **Calculated Columns**: Creating new columns with DAX.  
-
----
+**Text Functions**: `CONTAINSSTRING`/`SEARCH`/`FIND` for pattern matching.  
+**Conditional Logic**: `SWITCH` vs `IF` statements.  
+**Calculated Columns**: Creating new columns with DAX.  
 
 ### **Example Output**  
 
@@ -83,8 +75,6 @@ SWITCH(
 | Cycling Helmet     | accessories |  
 | Road Bike          | bike        |  
 | Tire Pump          | accessories |  
-
----
 
 ### **Why This Matters in Interviews**  
 
@@ -100,11 +90,7 @@ SWITCH(
 2. Creating a separate dimension table for categories.  
 3. Using Power Query for complex text transformations.  
 
----
-
 This document provides a clear, step-by-step explanation of creating a category column in Power BI using DAX, addressing common interview questions and challenges.  
 
 > [!TIP]  
 > Practice this pattern with different datasets to reinforce your understanding of text manipulation and conditional logic in DAX.  
-
----
