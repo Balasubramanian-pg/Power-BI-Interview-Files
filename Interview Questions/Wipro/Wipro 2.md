@@ -1,210 +1,214 @@
-# Power BI Running Total (Cumulative Total) - Interview Question & Solution
+# **Running Total (Cumulative Total) - Interview Question & Solution**  
 
-## Interview Question
+## **Interview Question**  
 
-**"Can you write the DAX code to calculate a running total (cumulative total)? How would you create a measure that shows the cumulative sales up to a particular date?"**
+**"Can you write the DAX code to calculate a running total (cumulative total)? How would you create a measure that shows the cumulative sales up to a particular date?"**  
 
-## What is Running Total?
+> [!NOTE]  
+> This problem tests your understanding of DAX functions like `CALCULATE`, `FILTER`, and `ALL`, as well as time intelligence concepts.  
 
-**Running Total (Cumulative Total)** is the sum of all values from the beginning up to the current row/date. It accumulates values progressively.
+## **What is Running Total?**  
 
-### Example:
+**Running Total (Cumulative Total)** is the sum of all values from the beginning up to the current row/date. It accumulates values progressively.  
 
-```Plain
-Year | Sales Value | Running Total
------|-------------|---------------
-2020 | 890         | 890           (890)
-2021 | 275         | 1165          (890 + 275)
-2022 | 1500        | 2665          (890 + 275 + 1500)
-```
+**Example**:  
+```Plain  
+Year | Sales Value | Running Total  
+-----|-------------|---------------  
+2020 | 890         | 890           (890)  
+2021 | 275         | 1165          (890 + 275)  
+2022 | 1500        | 2665          (890 + 275 + 1500)  
+```  
 
-## Sample Data Setup
+## **Sample Data Setup**  
 
-### Sales Sample Table:
+### **Sales Sample Table**:  
+```Plain  
+Product | Order Date | Sales Value  
+--------|------------|------------  
+A       | 2020-03-15 | 500  
+B       | 2020-06-20 | 390  
+C       | 2021-02-10 | 275  
+D       | 2022-01-05 | 800  
+E       | 2022-08-12 | 700  
+```  
 
-```Plain
-Product | Order Date | Sales Value
---------|------------|------------
-A       | 2020-03-15 | 500
-B       | 2020-06-20 | 390
-C       | 2021-02-10 | 275
-D       | 2022-01-05 | 800
-E       | 2022-08-12 | 700
-```
+### **Calendar Table**:  
+```Plain  
+Date       | Year | Month  
+-----------|------|------  
+2020-01-01 | 2020 | 1  
+2020-01-02 | 2020 | 1  
+...        | ...  | ...  
+2022-12-31 | 2022 | 12  
+```  
 
-### Calendar Table:
+### **Model Relationship**:  
+- **Sales Sample Table** ↔ **Calendar Table**  
+- **Relationship**: One-to-Many  
+- **Key**: Date columns  
 
-```Plain
-Date       | Year | Month
------------|------|------
-2020-01-01 | 2020 | 1
-2020-01-02 | 2020 | 1
-...        | ...  | ...
-2022-12-31 | 2022 | 12
-```
+> [!TIP]  
+> Ensure the relationship is correctly defined for time intelligence calculations.  
 
-### Model Relationship:
+## **Solution Code**  
 
-- **Sales Sample Table** ↔ **Calendar Table**
-- **Relationship:** One-to-Many
-- **Key:** Date columns
+### **❌ Incorrect Approach (Common Mistake)**:  
+```dax  
+Running Total =  
+CALCULATE(  
+    SUM(Sales[Sales Value]),  
+    FILTER(  
+        Calendar,  
+        Calendar[Date] <= MAX(Calendar[Date])  
+    )  
+)  
+```  
 
-## Solution Code
+**Problem**: This doesn't ignore existing filters, so it returns the same values as a regular sum.  
 
-### ❌ Incorrect Approach (Common Mistake):
+### **Correct Solution**:  
+```dax  
+Running Total =  
+CALCULATE(  
+    SUM(Sales[Sales Value]),  
+    FILTER(  
+        ALL(Calendar),  
+        Calendar[Date] <= MAX(Calendar[Date])  
+    )  
+)  
+```  
 
-```Plain
-Running Total =
-CALCULATE(
-    SUM(Sales[Sales Value]),
-    FILTER(
-        Calendar,
-        Calendar[Date] <= MAX(Calendar[Date])
-    )
-)
-```
+> [!IMPORTANT]  
+> The `ALL` function is critical to ignore existing filters and ensure cumulative calculation.  
 
-**Problem:** This doesn't ignore existing filters, so it returns the same values as regular sum.
+## **Expected Output**  
 
-### ✅ Correct Solution:
+### **Year-wise Breakdown**:  
+```Plain  
+Year | Sales Value | Running Total | Calculation  
+-----|-------------|---------------|------------------  
+2020 | 890         | 890           | 890  
+2021 | 275         | 1,165         | 890 + 275  
+2022 | 1,500       | 2,665         | 890 + 275 + 1,500  
+```  
 
-```Plain
-Running Total =
-CALCULATE(
-    SUM(Sales[Sales Value]),
-    FILTER(
-        ALL(Calendar),
-        Calendar[Date] <= MAX(Calendar[Date])
-    )
-)
-```
+### **Visual Representation**:  
+```Plain  
+2020: ████████████████████ 890  
+2021: ████████████████████████████████ 1,165  
+2022: ████████████████████████████████████████████████████ 2,665  
+```  
 
-## Expected Output
+## **Code Breakdown**  
 
-### Year-wise Breakdown:
+### **1. `CALCULATE` Function**  
+```dax  
+CALCULATE(  
+    SUM(Sales[Sales Value]),  // Expression to calculate  
+    FILTER(...)               // Filter context  
+)  
+```  
 
-```Plain
-Year | Sales Value | Running Total | Calculation
------|-------------|---------------|------------------
-2020 | 890         | 890           | 890
-2021 | 275         | 1,165         | 890 + 275
-2022 | 1,500       | 2,665         | 890 + 275 + 1,500
-```
+### **2. `SUM` Function**  
+```dax  
+SUM(Sales[Sales Value])  // Sums the sales values  
+```  
 
-### Visual Representation:
+### **3. `FILTER` Function**  
+```dax  
+FILTER(  
+    ALL(Calendar),                    // Table to filter  
+    Calendar[Date] <= MAX(Calendar[Date])  // Filter condition  
+)  
+```  
 
-```Plain
-2020: ████████████████████ 890
-2021: ████████████████████████████████ 1,165
-2022: ████████████████████████████████████████████████████ 2,665
-```
+### **4. `ALL` Function (Critical Part)**  
+```dax  
+ALL(Calendar)  // Ignores existing filters and returns all calendar rows  
+```  
 
-## Code Breakdown
+### **5. Filter Condition**  
+```dax  
+Calendar[Date] <= MAX(Calendar[Date])  // Include all dates up to current row's date  
+```  
 
-### 1. CALCULATE Function
+> [!TIP]  
+> The `ALL` function ensures the filter context is reset, allowing cumulative calculation.  
 
-```Plain
-CALCULATE(
-    SUM(Sales[Sales Value]),  -- Expression to calculate
-    FILTER(...)               -- Filter context
-)
-```
+## **Why `ALL()` Function is Critical**  
 
-### 2. SUM Function
+### **Without `ALL()`**:  
+- Existing filters remain active.  
+- Only the current row's date is considered.  
+- Result = Same as regular SUM (no cumulative effect).  
 
-```Plain
-SUM(Sales[Sales Value])  -- Sums the sales values
-```
+### **With `ALL()`**:  
+- Ignores all existing filters on the Calendar table.  
+- Considers all rows in the Calendar table.  
+- Applies new filter condition (dates <= current date).  
+- Result = True cumulative total.  
 
-### 3. FILTER Function
+## **Step-by-Step Logic**  
 
-```Plain
-FILTER(
-    ALL(Calendar),                    -- Table to filter
-    Calendar[Date] <= MAX(Calendar[Date])  -- Filter condition
-)
-```
+1. **`ALL(Calendar)`** - Remove all existing filters from the Calendar table.  
+2. **`Calendar[Date] <= MAX(Calendar[Date])`** - Keep only dates up to the current row's maximum date.  
+3. **`SUM(Sales[Sales Value])`** - Sum sales values for the filtered date range.  
+4. **`CALCULATE`** - Apply the filter context and calculate the result.  
 
-### 4. ALL Function (Critical Part)
+## **Alternative Approaches**  
 
-```Plain
-ALL(Calendar)  -- Ignores existing filters and returns all calendar rows
-```
+### **Using `SUMX` with `FILTER`**:  
+```dax  
+Running Total Alt =  
+SUMX(  
+    FILTER(  
+        ALL(Calendar),  
+        Calendar[Date] <= MAX(Calendar[Date])  
+    ),  
+    CALCULATE(SUM(Sales[Sales Value]))  
+)  
+```  
 
-### 5. Filter Condition
+### **Using Variables for Clarity**:  
+```dax  
+Running Total Clear =  
+VAR CurrentDate = MAX(Calendar[Date])  
+VAR FilteredDates =  
+    FILTER(  
+        ALL(Calendar),  
+        Calendar[Date] <= CurrentDate  
+    )  
+RETURN  
+    CALCULATE(  
+        SUM(Sales[Sales Value]),  
+        FilteredDates  
+    )  
+```  
 
-```Plain
-Calendar[Date] <= MAX(Calendar[Date])  -- Include all dates up to current row's date
-```
+> [!TIP]  
+> Variables improve readability and performance by avoiding redundant calculations.  
 
-## Why ALL() Function is Critical
+## **Interview Key Points**  
 
-### Without ALL():
+1. **`ALL()` Function is Essential** - Without it, running total won't work.  
+2. **`FILTER` Logic** - Must include all dates up to the current date.  
+3. **`MAX()` Function** - Gets the maximum date in the current context.  
+4. **`CALCULATE` Context** - Modifies filter context for calculation.  
+5. **Common Mistake** - Forgetting `ALL()` function leads to incorrect results.  
 
-- Existing filters remain active
-- Only current row's date is considered
-- Result = Same as regular SUM (no cumulative effect)
+## **When to Use Running Total**  
 
-### With ALL():
+- **Financial Reports** - Cumulative revenue, expenses.  
+- **Sales Analysis** - Year-to-date sales, quarterly cumulative.  
+- **Performance Tracking** - Cumulative targets vs. actual.  
+- **Inventory Management** - Cumulative stock levels.  
+- **Project Management** - Cumulative costs, hours.  
 
-- Ignores all existing filters on Calendar table
-- Considers all rows in Calendar table
-- Applies new filter condition (dates <= current date)
-- Result = True cumulative total
+> [!IMPORTANT]  
+> This DAX pattern is fundamental for time intelligence calculations in Power BI and is frequently tested in interviews.  
 
-## Step-by-Step Logic
+This document provides a comprehensive solution to calculating running totals in Power BI, addressing common interview questions and challenges.  
 
-1. **ALL(Calendar)** - Remove all existing filters from Calendar table
-2. **Calendar[Date] <= MAX(Calendar[Date])** - Keep only dates up to current row's maximum date
-3. **SUM(Sales[Sales Value])** - Sum sales values for the filtered date range
-4. **CALCULATE** - Apply the filter context and calculate the result
-
-## Alternative Approaches
-
-### Using SUMX with FILTER:
-
-```Plain
-Running Total Alt =
-SUMX(
-    FILTER(
-        ALL(Calendar),
-        Calendar[Date] <= MAX(Calendar[Date])
-    ),
-    CALCULATE(SUM(Sales[Sales Value]))
-)
-```
-
-### Using Variables for Clarity:
-
-```Plain
-Running Total Clear =
-VAR CurrentDate = MAX(Calendar[Date])
-VAR FilteredDates =
-    FILTER(
-        ALL(Calendar),
-        Calendar[Date] <= CurrentDate
-    )
-RETURN
-    CALCULATE(
-        SUM(Sales[Sales Value]),
-        FilteredDates
-    )
-```
-
-## Interview Key Points
-
-1. **ALL() Function is Essential** - Without it, running total won't work
-2. **FILTER Logic** - Must include all dates up to current date
-3. **MAX() Function** - Gets the maximum date in current context
-4. **CALCULATE Context** - Modifies filter context for calculation
-5. **Common Mistake** - Forgetting ALL() function leads to incorrect results
-
-## When to Use Running Total
-
-- **Financial Reports** - Cumulative revenue, expenses
-- **Sales Analysis** - Year-to-date sales, quarterly cumulative
-- **Performance Tracking** - Cumulative targets vs. actual
-- **Inventory Management** - Cumulative stock levels
-- **Project Management** - Cumulative costs, hours
-
-This DAX pattern is fundamental for time intelligence calculations in Power BI and is frequently tested in interviews.
+> [!TIP]  
+> Practice this pattern with different datasets to reinforce your understanding of DAX and time intelligence.  
