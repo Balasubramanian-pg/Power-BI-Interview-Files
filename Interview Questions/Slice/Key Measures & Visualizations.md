@@ -3,8 +3,6 @@
 > [!IMPORTANT]  
 > **Before You Begin**: Ensure your data model has proper relationships between tables for accurate measure calculations.  
 
----
-
 ## 1. Top 5 Products' Profit Share Calculation  
 
 ### 1.1 Data Structure Example  
@@ -49,8 +47,6 @@ RETURN
 > [!WARNING]  
 > Avoid hardcoding values (e.g., `TOPN(5,...)`). Use a parameter table for dynamic "Top N" selection.  
 
----
-
 ## 2. Alternating Bar Colors in Charts  
 
 ### 2.1 Sample Data  
@@ -85,8 +81,6 @@ Color Code = IF(ISEVEN(MONTH('Sales'[Date])), 0, 1)  // 0=Even, 1=Odd
 > [!CAUTION]  
 > Power BI may reset conditional formatting when modifying visuals. Save your theme as a JSON file for quick recovery.  
 
----
-
 ## 3. Key Takeaways  
 
 ### 3.1 Top N Analysis  
@@ -109,8 +103,6 @@ Color Code = IF(ISEVEN(MONTH('Sales'[Date])), 0, 1)  // 0=Even, 1=Odd
 
 > [!NOTE]  
 > For enterprise deployments, document all DAX measures in a central repository with business logic descriptions.  
-
---- 
 
 > [!WARNING]  
 > **Final Checklist**:  
