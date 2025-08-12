@@ -1,4 +1,4 @@
-# Power BI Interview Question: Transforming Data with Power Query  
+# Transforming Data with Power Query  
 
 ## **Problem Statement**  
 
