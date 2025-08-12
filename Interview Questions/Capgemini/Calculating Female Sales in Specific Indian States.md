@@ -18,8 +18,6 @@ Create a DAX measure to calculate total sales from female customers in **Karnata
 > [!NOTE]  
 > This problem tests your ability to filter and aggregate data using DAX, specifically with `CALCULATE` and multi-value comparisons.  
 
----
-
 ## **Optimal DAX Solution**  
 
 ### **1. Final Measure Code**  
@@ -31,9 +29,6 @@ CALCULATE(
     Sales[State] IN {"Karnataka", "Maharashtra", "Gujarat"}  
 )  
 ```  
-
----
-
 ### **2. Key Components Explained**  
 
 | **Function/Component** | **Purpose**                          | **Why It's Used**                          |  
@@ -45,8 +40,6 @@ CALCULATE(
 
 > [!TIP]  
 > The `IN` operator is concise and efficient for filtering multiple values.  
-
----
 
 ### **3. Alternative Implementations**  
 
@@ -81,8 +74,6 @@ RETURN
 > [!TIP]  
 > Variables improve readability and reusability, especially for repeated values.  
 
----
-
 ### **Performance Considerations**  
 
 1. **Filter Order Matters**  
@@ -99,16 +90,12 @@ RETURN
 > [!WARNING]  
 > Poor filter order or unnecessary nesting can degrade performance, especially on large datasets.  
 
----
-
 ### **Expected Output**  
 
 For the sample data:  
 - **Total Female Sales (All States)**: ₹3,500  
 - **Female Sales (Target States)**: ₹2,100  
   *(Assuming 60% of female sales come from the 3 target states)*  
-
----
 
 ### **Why This Solution Works for Interviews**  
 
@@ -126,8 +113,6 @@ For the sample data:
 
 > [!TIP]  
 > Always verify your measure with a pivot table or card visual to ensure accuracy.  
-
----
 
 This document provides a clear, step-by-step explanation of calculating female sales in specific states using DAX, addressing common interview questions and challenges.  
 
