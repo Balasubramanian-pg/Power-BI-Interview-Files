@@ -14,8 +14,8 @@ Use the `DIVIDE()` function and variables for clarity and efficiency.
 
 ```dax  
 Total Optimized =  
-VAR Numerator = [a] * [b] * [d]  
-VAR Denominator = [c]  
+VAR Numerator = [a] * [b]   
+VAR Denominator = [c] * [d]
 VAR Result = DIVIDE(Numerator, Denominator, 0)  // Returns 0 if division by zero occurs  
 RETURN Result  
 ```  
