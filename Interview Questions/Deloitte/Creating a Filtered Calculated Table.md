@@ -49,7 +49,7 @@ FILTER(
 )
 ```
 
-## ** DAX Solution**  
+## DAX Solution  
 
 ```dax  
 Required Table =  
