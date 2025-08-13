@@ -7,15 +7,11 @@ This Power BI interview question focuses on **time intelligence functions** (`DA
 > [!NOTE]  
 > This problem tests your understanding of time-based calculations and handling unique values in DAX.  
 
----
-
 ## **Part 1: `DATEADD` vs. `PARALLELPERIOD`**  
 
 ### **Problem Statement**  
 - **Data**: A table with `Year`, `Month`, and `Total Sales` (e.g., 2020-Jan: 100, 2020-Feb: 150, 2021-Jan: 200, etc.).  
 - **Goal**: Calculate **last year’s sales** for each month (e.g., Jan 2021 should show Jan 2020 sales).  
-
----
 
 ### **Solution**  
 
@@ -37,8 +33,6 @@ CALCULATE(
 > [!TIP]  
 > `DATEADD` is ideal for comparing the same period in the previous year (e.g., month-to-month).  
 
----
-
 ### **2. Using `PARALLELPERIOD` (Returns aggregated period)**  
 ```dax  
 Last Year Sales (PARALLELPERIOD) =  
@@ -57,23 +51,17 @@ CALCULATE(
 > [!WARNING]  
 > `PARALLELPERIOD` sums all values in the previous year, not month-to-month.  
 
----
-
 ### **Key Difference**  
 - **`DATEADD`**: Compares the **same month** in the previous year.  
 - **`PARALLELPERIOD`**: Aggregates the **entire previous year**.  
 
 > [!IMPORTANT]  
-> Use `DATEADD` for monthly comparisons and `PARALLELPERIOD` for YTD or annual trends.  
-
----
+> Use `DATEADD` for monthly comparisons and `PARALLELPERIOD` for YTD or annual trends.
 
 ## **Part 2: `VALUES` vs. `DISTINCT`**  
 
 ### **Problem Statement**  
 - Both functions return **unique values** from a column, but they handle **blanks** differently.  
-
----
 
 ### **Solution**  
 
@@ -101,7 +89,6 @@ Unique Customers (DISTINCT) = COUNTROWS(DISTINCT('Sales'[Customer]))
 ### **When to Use Which**  
 - **`VALUES`**: When blanks are meaningful (e.g., "Unknown" customers).  
 - **`DISTINCT`**: When blanks should be excluded.  
-
 
 ### **Interview Takeaways**  
 
