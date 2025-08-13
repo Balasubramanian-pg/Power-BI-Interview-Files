@@ -94,9 +94,8 @@ CALCULATETABLE(
 > [!IMPORTANT]  
 > Use `SEARCH()` for case-insensitive text filtering.  
 
----
 
-### **Expected Output**  
+### Expected Output  
 
 A new table with:  
 
