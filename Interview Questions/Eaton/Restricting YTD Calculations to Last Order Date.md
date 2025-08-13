@@ -116,5 +116,3 @@ This document provides a clear, step-by-step explanation of restricting YTD calc
 
 > [!TIP]  
 > Practice this pattern with different datasets to reinforce your understanding of time intelligence and dynamic filtering in DAX.  
-
----
