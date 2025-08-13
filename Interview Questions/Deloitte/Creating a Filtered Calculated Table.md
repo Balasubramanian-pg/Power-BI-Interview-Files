@@ -37,6 +37,17 @@ And apply the following filters:
 - Column selection with `SUMMARIZECOLUMNS`  
 
 ---
+### The Most Optimized version would be
+
+```dax
+Required Table =
+FILTER(
+    Products,
+    Products[Product ID] <= 100 &&
+    Products[Price] >= 500 &&
+    LEFT(Products[Product Name], 1) = "s"
+)
+```
 
 ## ** DAX Solution**  
 
