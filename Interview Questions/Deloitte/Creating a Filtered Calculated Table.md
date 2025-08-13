@@ -85,7 +85,7 @@ CALCULATETABLE(
 
 ---
 
-### **📊 Expected Output**  
+### **Expected Output**  
 
 A new table with:  
 
