@@ -172,3 +172,12 @@ This document provides a clear explanation of Power BI join operations and their
 
 > [!TIP]  
 > Use sample datasets to experiment with different join types and observe how null values affect the results.  
+
+| Join Type        | Row Count |
+| ---------------- | --------- |
+| Inner Join       | 6         |
+| Left Outer Join  | 7         |
+| Right Outer Join | 8         |
+| Left Anti Join   | 2         |
+| Right Anti Join  | 2         |
+| Full Outer Join  | 9         |
