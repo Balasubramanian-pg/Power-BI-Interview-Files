@@ -1,0 +1,27 @@
+## 23. What’s the effect of **changing the storage mode** (Import vs. Dual vs. DirectQuery) for a dimension table?
+
+The storage mode of a dimension table is one of the most critical decisions in a composite model, directly impacting both performance and functionality.
+
+#### Import Mode Dimension
+*   **Behavior:** The entire dimension table is loaded into the in-memory VertiPaq engine.
+*   **Pros:**
+    *   **Fastest Slicers:** Populating slicers and filters is instantaneous as all values are in memory.
+    *   **Full DAX Support:** Works seamlessly with all DAX functions.
+*   **Cons:**
+    *   **Data Latency:** Data is only as fresh as the last refresh.
+    *   **Limited Relationships in Composite Models:** When connected to a DirectQuery fact table, this creates a "limited relationship." Performance can be slow as the join between the in-memory dimension and the remote fact table can be inefficient.
+
+#### DirectQuery Mode Dimension
+*   **Behavior:** The dimension table remains in the source system. Power BI queries it on-the-fly.
+*   **Pros:**
+    *   **Real-time Data:** Slicers will show the absolute latest data from the source.
+*   **Cons:**
+    *   **Slow Slicers:** Every time a user interacts with a slicer based on this dimension, Power BI must send a query to the source to get the list of values. This can make the report feel sluggish.
+    *   **Performance Bottleneck:** This is generally considered an anti-pattern unless the dimension table is enormous (billions of rows) or must be strictly real-time.
+
+#### Dual Mode Dimension (The Optimizer)
+*   **Behavior:** This is the most flexible mode. Power BI can treat the table as either Import or DirectQuery depending on the query context. It maintains an in-memory cache (like Import) but can also query the source.
+*   **Effect in a Composite Model:**
+    *   **Querying an Import Fact Table:** If a query only involves the Dual dimension and an Import mode fact table, Power BI uses the dimension's in-memory cache. This is very fast.
+    *   **Querying a DirectQuery Fact Table:** If a query involves the Dual dimension and a DirectQuery fact table, Power BI uses the dimension as a DirectQuery source. It efficiently passes the filter values (e.g., the selected `ProductKey`) to the source system, allowing for an efficient join on the source side.
+*   **Primary Use Case:** Dual mode is the **best practice** for all dimension tables in a composite model that need to slice both Import and DirectQuery fact tables. It provides the performance of Import mode where possible and the efficiency of DirectQuery relationships when necessary.
