@@ -28,8 +28,6 @@ CALCULATE(
 > - `ALLEXCEPT` removes filters on all columns **except** `Customer`.
 > - `MAX` computes the highest sale per customer.
 
----
-
 ### **Bonus: SQL Equivalent for Scenario 1**
 ```sql
 SELECT
