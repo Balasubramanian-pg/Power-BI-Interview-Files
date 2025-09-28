@@ -1,4 +1,4 @@
-### **Scenario 1: Grouping Employees with Concatenated Departments and Summed Salaries**
+# **Scenario 1: Grouping Employees with Concatenated Departments and Summed Salaries**
 **Input Table:**
 | EMP | Department | Salary |
 |-----|------------|--------|
@@ -32,5 +32,3 @@ SUMMARIZE(
 > - `SUMMARIZE` groups data by `EMP`.
 > - `CONCATENATEX` + `VALUES` concatenates unique departments with `|`.
 > - `SUM` aggregates salaries for each group.
-
----
