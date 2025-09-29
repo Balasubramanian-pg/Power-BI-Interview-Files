@@ -97,3 +97,35 @@ RETURN
 - **INDEX(-2, ...)** - Second to last row
 
 So `-1` gives you the last employee in the current filter context, and the measure will now show the difference between each employee's salary and the last employee's salary.
+
+Actually, I need to verify this - the INDEX function in DAX might not support negative indexing the way I described. Let me reconsider:
+
+For getting the **last row**, you might need a different approach:
+
+```dax
+Result =  
+VAR LastSalary =  
+    CALCULATE(  
+        [Total Salary],  
+        LASTNONBLANK(
+            ALLSELECTED(Employees[Name], Employees[ID]),
+            [Total Salary]
+        )
+    )  
+RETURN  
+    LastSalary - [Total Salary]
+```
+
+Or potentially counting the rows and using that count:
+
+```dax
+Result =  
+VAR RowCount = COUNTROWS(ALLSELECTED(Employees[Name], Employees[ID]))
+VAR LastSalary =  
+    CALCULATE(  
+        [Total Salary],  
+        INDEX(RowCount, ALLSELECTED(Employees[Name], Employees[ID]))  
+    )  
+RETURN  
+    LastSalary - [Total Salary]
+```
