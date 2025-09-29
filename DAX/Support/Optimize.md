@@ -1,0 +1,18 @@
+### **Optimization & Scalability**
+32. **Measure to Avoid Circular Dependencies**  
+    ```DAX
+    Safe Measure = 
+    VAR Result = [Total Sales]
+    RETURN IF(ISBLANK(Result), 0, Result)
+    ```
+    *Prevents errors in complex models.*
+
+33. **Aggregated Table for Performance**  
+    ```DAX
+    Precalc Sales = 
+    SUMMARIZECOLUMNS(
+      'Date'[Year],
+      "Total Sales", [Total Sales]
+    )
+    ```
+    *Uses `SUMMARIZECOLUMNS` for optimized storage.*
