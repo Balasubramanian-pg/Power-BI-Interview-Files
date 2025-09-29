@@ -74,7 +74,7 @@ This document provides a clear, step-by-step explanation of calculating salary d
 > [!TIP]  
 > Practice this pattern with different datasets to reinforce your understanding of relative calculations and context transitions in DAX.
 
-## How do we find last employee salary as baseline 
+## How do we find the previous employee salary as baseline 
 (because interviewers just love making you feel like you do not know anything)
 
 Just change `INDEX(1, ...)` to `INDEX(-1, ...)`:
@@ -129,46 +129,85 @@ VAR LastSalary =
 RETURN  
     LastSalary - [Total Salary]
 ```
+## How do we find last employee's salary as baseline
+To use the **last employee as the baseline** (instead of the previous row), you need to modify the approach. Here are several methods:
 
-## LASTNONBLANK Function
-
-**Syntax:**
-```dax
-LASTNONBLANK(<column>, <expression>)
-```
-
-## What it does:
-Returns the **last value** in a column where the expression is not blank, based on the column's sort order.
-
-## How it works:
-
-1. **Scans the column** in its natural/sorted order
-2. **Evaluates the expression** for each row
-3. **Returns the last row** where the expression has a non-blank value
-4. It returns the **entire row context**, not just the value
-
-## Example:
+## Method 1: Fixed Last Employee Baseline
 
 ```dax
-LastSaleDate = 
-CALCULATE(
-    [Total Sales],
-    LASTNONBLANK(Sales[Date], [Total Sales])
-)
+Result = 
+VAR LastEmployeeSalary =
+    CALCULATE(
+        [Total Salary],
+        LASTNONBLANK(Employees[Name], [Total Salary]),
+        ALLSELECTED(Employees)
+    )
+RETURN
+    [Total Salary] - LastEmployeeSalary
 ```
 
-This finds the **last date** that has sales (non-blank sales value) and calculates total sales for that date.
+## Method 2: Using MAXX with TOPN
 
-## Key Points:
+```dax
+Result = 
+VAR LastEmployeeSalary =
+    MAXX(
+        TOPN(1, VALUES(Employees[Name]), Employees[Name], DESC),
+        [Total Salary]
+    )
+RETURN
+    [Total Salary] - LastEmployeeSalary
+```
 
-- **Requires sort order** - The "last" depends on how the column is sorted (dates go chronologically, text goes alphabetically, etc.)
-- **Returns a filter context** - It narrows down to that specific row, which you then use in CALCULATE
-- **Checks for non-blank** - Only considers rows where the expression evaluates to a non-blank value
+## Method 3: Using LASTDATE (if Name is sorted)
 
-## Common Use Cases:
-- Last transaction date
-- Most recent status
-- Latest non-zero balance
-- Final recorded value in a time series
+```dax
+Result = 
+VAR LastEmployeeSalary =
+    CALCULATE(
+        [Total Salary],
+        LASTDATE(Employees[Name]),
+        ALLSELECTED(Employees)
+    )
+RETURN
+    [Total Salary] - LastEmployeeSalary
+```
 
-Think of it as "give me the filter for the last row that has actual data."
+## Method 4: More Robust - Handle Multiple Columns
+
+```dax
+Result = 
+VAR LastEmployee =
+    CALCULATE(
+        LASTNONBLANK(Employees[Name], 1),
+        ALLSELECTED(Employees)
+    )
+VAR LastEmployeeSalary =
+    CALCULATE(
+        [Total Salary],
+        Employees[Name] = LastEmployee,
+        ALLSELECTED(Employees)
+    )
+RETURN
+    [Total Salary] - LastEmployeeSalary
+```
+
+## Example Output:
+If your sorted table shows:
+```
+Name    | Total Salary | Result
+Alice   | $60,000      | $10,000 (60,000 - 50,000) 
+John    | $50,000      | $0 (50,000 - 50,000)
+Mike    | $45,000      | -$5,000 (45,000 - 50,000)
+```
+*(Assuming "Mike" is the last employee in the sort order)*
+
+## Key Differences from Original:
+- **Original**: Compared each row to its immediate predecessor
+- **New**: Compares all rows to the **last employee** in the current context
+- **Baseline**: Fixed reference point (last employee) instead of moving window
+
+## Pro Tip:
+If you want to **reverse this** (use first employee as baseline), replace `LASTNONBLANK` with `FIRSTNONBLANK` or `LASTDATE` with `FIRSTDATE`.
+
+The **Method 1** with `LASTNONBLANK` is generally the most reliable approach.
