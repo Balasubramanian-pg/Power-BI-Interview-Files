@@ -72,4 +72,27 @@ RETURN
 This document provides a clear, step-by-step explanation of calculating salary differences in Power BI using advanced DAX techniques. It’s designed to help candidates understand and articulate the solution effectively in interviews.  
 
 > [!TIP]  
-> Practice this pattern with different datasets to reinforce your understanding of relative calculations and context transitions in DAX.  
+> Practice this pattern with different datasets to reinforce your understanding of relative calculations and context transitions in DAX.
+
+## How do we find last employee salary as baseline (because interviewers just love making you feel like you do not know anything)
+
+Just change `INDEX(1, ...)` to `INDEX(-1, ...)`:
+
+```dax
+Result =  
+VAR LastSalary =  
+    CALCULATE(  
+        [Total Salary],  
+        INDEX(-1, ALLSELECTED(Employees[Name], Employees[ID]))  
+    )  
+RETURN  
+    LastSalary - [Total Salary]
+```
+
+## How INDEX works:
+- **INDEX(1, ...)** - First row
+- **INDEX(-1, ...)** - Last row
+- **INDEX(2, ...)** - Second row
+- **INDEX(-2, ...)** - Second to last row
+
+So `-1` gives you the last employee in the current filter context, and the measure will now show the difference between each employee's salary and the last employee's salary.
