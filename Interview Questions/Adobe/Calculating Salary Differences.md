@@ -74,7 +74,8 @@ This document provides a clear, step-by-step explanation of calculating salary d
 > [!TIP]  
 > Practice this pattern with different datasets to reinforce your understanding of relative calculations and context transitions in DAX.
 
-## How do we find last employee salary as baseline (because interviewers just love making you feel like you do not know anything)
+## How do we find last employee salary as baseline 
+(because interviewers just love making you feel like you do not know anything)
 
 Just change `INDEX(1, ...)` to `INDEX(-1, ...)`:
 
