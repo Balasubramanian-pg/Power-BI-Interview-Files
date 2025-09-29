@@ -129,3 +129,46 @@ VAR LastSalary =
 RETURN  
     LastSalary - [Total Salary]
 ```
+
+## LASTNONBLANK Function
+
+**Syntax:**
+```dax
+LASTNONBLANK(<column>, <expression>)
+```
+
+## What it does:
+Returns the **last value** in a column where the expression is not blank, based on the column's sort order.
+
+## How it works:
+
+1. **Scans the column** in its natural/sorted order
+2. **Evaluates the expression** for each row
+3. **Returns the last row** where the expression has a non-blank value
+4. It returns the **entire row context**, not just the value
+
+## Example:
+
+```dax
+LastSaleDate = 
+CALCULATE(
+    [Total Sales],
+    LASTNONBLANK(Sales[Date], [Total Sales])
+)
+```
+
+This finds the **last date** that has sales (non-blank sales value) and calculates total sales for that date.
+
+## Key Points:
+
+- **Requires sort order** - The "last" depends on how the column is sorted (dates go chronologically, text goes alphabetically, etc.)
+- **Returns a filter context** - It narrows down to that specific row, which you then use in CALCULATE
+- **Checks for non-blank** - Only considers rows where the expression evaluates to a non-blank value
+
+## Common Use Cases:
+- Last transaction date
+- Most recent status
+- Latest non-zero balance
+- Final recorded value in a time series
+
+Think of it as "give me the filter for the last row that has actual data."
