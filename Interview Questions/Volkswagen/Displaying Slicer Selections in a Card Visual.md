@@ -8,8 +8,6 @@ You need to show all selected values from a **Country slicer** in a **card visua
 > [!NOTE]  
 > This problem tests your ability to handle dynamic text aggregation and filter context in DAX.  
 
----
-
 ## **DAX Measure Solution**  
 
 ```dax  
@@ -94,7 +92,6 @@ RETURN
 Demonstrates **DAX string manipulation** skills.  
 Shows understanding of **filter context** (`ISFILTERED` vs `ISCROSSFILTERED`).  
 Provides **user-friendly UX** considerations.  
-
 **Pro Tip**: Use `SELECTEDVALUE()` with a fallback for single-selection scenarios.  
 
 This document provides a clear, step-by-step explanation of displaying slicer selections in a card visual using DAX, addressing common interview questions and challenges.  
