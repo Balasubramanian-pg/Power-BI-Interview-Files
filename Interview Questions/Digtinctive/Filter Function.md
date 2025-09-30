@@ -29,3 +29,40 @@ IF ( SUM('Sales'[Sales Amount]) > 20, "High", "Low" )
 
 > [!CAUTION]
 > Using the wrong approach (column vs measure) can lead to misleading results — choose based on whether you need row-level classification or aggregated evaluation.
+
+Here’s how the same logic looks if you deliberately use `CALCULATE`:
+
+---
+
+**Measure with `CALCULATE`:**
+
+```DAX
+Performance Measure =
+IF (
+    CALCULATE ( SUM ( 'Sales'[Sales Amount] ) ) > 20,
+    "High",
+    "Low"
+)
+```
+
+---
+
+> [!NOTE]
+> This works exactly the same as `IF(SUM(...))`, because there’s no extra filter inside `CALCULATE`.
+
+> [!TIP]
+> You bring in `CALCULATE` only when you need to **change the filter context**, like checking totals for a subset of products, dates, or customers.
+
+Example:
+
+```DAX
+Performance Product A =
+IF (
+    CALCULATE ( SUM ( 'Sales'[Sales Amount] ), 'Sales'[Product] = "A" ) > 20,
+    "High",
+    "Low"
+)
+```
+
+> [!IMPORTANT]
+> That’s where `CALCULATE` becomes meaningful: applying conditions **inside** it.
