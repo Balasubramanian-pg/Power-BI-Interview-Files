@@ -219,16 +219,6 @@
 > [!TIP]
 > Use aggregations for large fact tables to dramatically improve query performance without changing the user experience.
 
----
-
-## Additional Resources
-
-### Key Contacts
-- Power BI Admin: _________________
-- Gateway Admin: _________________
-- IT Support: _________________
-- Business Owner: _________________
-
 ### Useful Links
 - Power BI Service: https://app.powerbi.com
 - Power BI Admin Portal: https://app.powerbi.com/admin-portal
@@ -237,6 +227,3 @@
 
 > [!NOTE]
 > This checklist should be customized to fit your organization's specific requirements, policies, and workflows.
-
-**Last Updated:** [Date]  
-**Deployment Version:** [Version Number]
