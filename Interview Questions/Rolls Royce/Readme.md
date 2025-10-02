@@ -129,6 +129,7 @@
 7. Enter user email addresses in the role's text box
 8. Click **Add**
 9. Click **Save**
+<img width="1919" height="993" alt="image" src="https://github.com/user-attachments/assets/e6986744-79af-4990-a033-de3c4377ca82" />
 
 **Testing in Power BI Service:**
 1. After assigning users, click **Test as role**
