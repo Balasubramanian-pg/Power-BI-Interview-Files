@@ -1948,3 +1948,984 @@ DISTINCTCOUNT(ActivityLog[UserId])
 - Create and test RLS roles
 - Use test user accounts
 - Security table points to dev data source
+
+**Test Environment:**
+- Deploy same RLS roles
+- Assign test team members
+- Security table points to test data source
+- Validate with realistic data volumes
+
+**Production Environment:**
+- Deploy same RLS roles
+- Security table points to production HR system
+- Assign actual business users
+- Monitor performance and access
+
+**Deployment Automation:**
+
+```powershell
+# PowerShell script to migrate RLS roles across workspaces
+
+# Connect to Power BI
+Connect-PowerBIServiceAccount
+
+# Source and target workspace IDs
+$sourceWorkspaceId = "dev-workspace-id"
+$targetWorkspaceId = "prod-workspace-id"
+$datasetName = "Sales_Report"
+
+# Export dataset from source (includes RLS definitions)
+Export-PowerBIDataset -WorkspaceId $sourceWorkspaceId -DatasetId $datasetId -OutFile "dataset.pbix"
+
+# Import to target workspace
+New-PowerBIReport -Path "dataset.pbix" -WorkspaceId $targetWorkspaceId -Name $datasetName
+
+# Note: User assignments must be done manually or via API
+# Role definitions are included in the dataset
+```
+
+**Best Practices:**
+- Version control RLS DAX expressions (store in Git)
+- Document environment-specific configurations
+- Automated testing for RLS (if possible)
+- Staged rollout (small user group first)
+- Monitoring dashboard for each environment
+
+---
+
+## Common Pitfalls and How to Avoid Them
+
+### Pitfall 1: Email Format Mismatches
+
+**Problem:**
+```
+Security Table EmailID: john.doe@Company.com
+USERPRINCIPALNAME() returns: john.doe@company.com (lowercase domain)
+Result: No match, user sees no data
+```
+
+**Solution:**
+- Always use lowercase for emails in Security table
+- Or use case-insensitive comparison in DAX:
+
+```DAX
+VAR UserRole = LOWER(USERPRINCIPALNAME())
+VAR RLS = 
+    CALCULATE(
+        VALUES(Security[Country]),
+        FILTER(Security, LOWER(Security[EmailID]) = UserRole)
+    )
+RETURN
+    [Country] IN RLS
+```
+
+> [!TIP]
+> Create a data quality check in your Security table source to automatically convert emails to lowercase and validate format.
+
+### Pitfall 2: Circular Filter Dependencies
+
+**Problem:**
+```
+Security → DimCountry → FactSales → DimProduct → Security (circular!)
+```
+
+**Symptom:** Error: "Circular dependency detected" or unexpected filtering behavior
+
+**Solution:**
+- Break the circular dependency
+- Use DAX-based filtering instead of relationships for multi-dimension RLS
+- Ensure Security table is at the "top" of filter flow (no tables filter back to Security)
+
+**Correct Pattern:**
+```
+Security (standalone, no incoming filters)
+   ↓ (DAX expressions)
+DimCountry    DimProduct
+   ↓              ↓
+      FactSales
+```
+
+### Pitfall 3: Forgetting to Test Edge Cases
+
+**Edge Cases to Test:**
+
+1. **New User (Not in Security Table)**
+   - Expected: No data or error message
+   - Test: Add measure showing user email, verify behavior
+
+2. **User with Multiple Values**
+   - Expected: OR logic (see all allowed values)
+   - Test: Add test user with 3 countries, verify all 3 visible
+
+3. **User in Multiple Roles**
+   - Expected: Union of all role permissions
+   - Test: Assign user to 2 roles, verify combined access
+
+4. **Inactive/Deleted User**
+   - Expected: Access revoked
+   - Test: Remove from Security table, verify no access
+
+5. **Null/Blank Values in Security Table**
+   - Expected: Defined behavior (exclude or include)
+   - Test: Add row with blank Country, verify behavior
+
+6. **Special Characters in Email**
+   - Expected: Works correctly (e.g., john.o'brien@company.com)
+   - Test: Create test user with apostrophe
+
+7. **Very Long Email Addresses**
+   - Expected: No truncation, works correctly
+   - Test: Email with 50+ characters
+
+**Test Checklist Template:**
+```markdown
+## RLS Test Cases
+
+### Role: Dynamic_Country
+- [ ] User with 1 country: Shows correct data
+- [ ] User with 3 countries: Shows all 3
+- [ ] User not in Security table: Shows no data
+- [ ] User removed from Security table: Access revoked
+- [ ] Lowercase email: Works
+- [ ] Uppercase email: Works
+- [ ] Mixed case email: Works
+- [ ] Email with special chars: Works
+- [ ] New country added to Security: Immediately visible
+- [ ] Performance: < 3 seconds load time
+```
+
+### Pitfall 4: Neglecting Mobile Experience
+
+**Problem:**
+- RLS works on desktop but behaves differently on mobile
+- Performance acceptable on desktop but slow on mobile
+- Visuals don't adapt to smaller screens with RLS applied
+
+**Solution:**
+- Test RLS on actual mobile devices (iOS, Android)
+- Use Mobile Layout view in Desktop for optimization
+- Consider mobile-specific performance optimizations:
+  - Fewer visuals per page
+  - Simpler visualizations
+  - Pre-aggregated data
+
+**Mobile Testing Checklist:**
+- [ ] RLS filters correctly on mobile app
+- [ ] Performance acceptable (< 5 seconds)
+- [ ] Touch interactions work with filtered data
+- [ ] All visuals render properly
+- [ ] Offline mode behavior (if supported)
+
+### Pitfall 5: Security Table Not Refreshing
+
+**Problem:**
+- New users added to Security table
+- Changes not reflected in Power BI Service
+- Users still see old permissions
+
+**Root Causes:**
+1. **Dataset refresh not triggered**
+   - Security table refresh scheduled separately from dataset
+   - Manual refresh needed after Security table changes
+
+2. **Cache not cleared**
+   - Power BI may cache RLS results briefly
+   - Browser cache showing old data
+
+3. **Security table not in dataset**
+   - Security table in different workspace
+   - Need to refresh both datasets
+
+**Solution:**
+- Set up cascading refresh: Security table refreshes first, then dataset
+- Use Power Automate/Logic Apps to trigger refresh after Security table updates
+- Document refresh dependencies
+
+**Refresh Chain Example:**
+```
+1. HR System (source) updates at 2:00 AM
+   ↓
+2. Security Table dataflow refreshes at 2:30 AM
+   ↓
+3. Power BI Dataset refreshes at 3:00 AM
+   ↓
+4. Users see updated permissions by 3:30 AM
+```
+
+### Pitfall 6: Over-Complicating RLS DAX
+
+**Bad Example (Overly Complex):**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR AllUsers = ALL(Security[EmailID])
+VAR FilteredUsers = FILTER(AllUsers, Security[EmailID] = UserRole)
+VAR CountUsers = COUNTROWS(FilteredUsers)
+VAR UserCountries = 
+    IF(
+        CountUsers > 0,
+        CALCULATETABLE(
+            VALUES(Security[Country]),
+            FILTER(
+                ALL(Security),
+                Security[EmailID] = UserRole
+            )
+        ),
+        BLANK()
+    )
+VAR HasCountries = NOT(ISBLANK(UserCountries))
+RETURN
+    IF(
+        HasCountries,
+        [Country] IN UserCountries,
+        FALSE
+    )
+```
+
+**Good Example (Simplified):**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR RLS = 
+    CALCULATE(
+        VALUES(Security[Country]),
+        Security[EmailID] = UserRole
+    )
+RETURN
+    [Country] IN RLS
+```
+
+**Impact:**
+- 3x faster execution
+- Easier to maintain and debug
+- Less prone to errors
+
+> [!IMPORTANT]
+> Keep RLS DAX as simple as possible. Complex expressions dramatically impact performance and are harder to troubleshoot.
+
+---
+
+## Advanced DAX Patterns for RLS
+
+### Pattern 1: Wildcard Access (Admin Override)
+
+**Use Case:** Admins should see all data without explicitly listing every value
+
+```DAX
+// Applied to DimCountry table
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserCountries = 
+    CALCULATE(
+        VALUES(Security[Country]),
+        Security[EmailID] = UserRole
+    )
+VAR HasWildcard = 
+    CONTAINS(UserCountries, Security[Country], "*")
+RETURN
+    IF(
+        HasWildcard,
+        TRUE,  // Show all countries
+        [Country] IN UserCountries  // Show specific countries
+    )
+```
+
+**Security Table:**
+| EmailID | Country |
+|---------|---------|
+| admin@company.com | * |
+| user1@company.com | France |
+| user2@company.com | Germany |
+
+### Pattern 2: Date-Based Access Control
+
+**Use Case:** Users have access to different data in different time periods
+
+```DAX
+// Applied to DimDate table
+VAR UserRole = USERPRINCIPALNAME()
+VAR TodayDate = TODAY()
+VAR ValidDateRanges = 
+    FILTER(
+        Security,
+        Security[EmailID] = UserRole &&
+        Security[AccessStartDate] <= TodayDate &&
+        Security[AccessEndDate] >= TodayDate
+    )
+VAR AllowedYears = 
+    SELECTCOLUMNS(ValidDateRanges, "Year", Security[AllowedYear])
+RETURN
+    [Year] IN AllowedYears
+```
+
+**Security Table:**
+| EmailID | AllowedYear | AccessStartDate | AccessEndDate |
+|---------|-------------|-----------------|---------------|
+| user1@company.com | 2024 | 2024-01-01 | 2024-12-31 |
+| user1@company.com | 2025 | 2025-01-01 | 2025-12-31 |
+
+### Pattern 3: Hierarchical Access
+
+**Use Case:** Managers see their data plus all subordinates' data
+
+```DAX
+// Applied to DimEmployee table
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserEmployeeID = 
+    CALCULATE(
+        VALUES(Security[EmployeeID]),
+        Security[EmailID] = UserRole
+    )
+// Get direct reports
+VAR DirectReports = 
+    FILTER(
+        DimEmployee,
+        DimEmployee[ManagerID] = UserEmployeeID
+    )
+// Get indirect reports (up to 3 levels)
+VAR Level2Reports = 
+    FILTER(
+        DimEmployee,
+        DimEmployee[ManagerID] IN DirectReports[EmployeeID]
+    )
+VAR Level3Reports = 
+    FILTER(
+        DimEmployee,
+        DimEmployee[ManagerID] IN Level2Reports[EmployeeID]
+    )
+// Combine all levels
+VAR AllReports = 
+    UNION(
+        DirectReports,
+        Level2Reports,
+        Level3Reports
+    )
+RETURN
+    [EmployeeID] = UserEmployeeID ||  // Own data
+    [EmployeeID] IN AllReports[EmployeeID]  // Subordinates' data
+```
+
+**Better Approach Using PATH Functions:**
+```DAX
+// Applied to DimEmployee table
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserEmployeeID = 
+    CALCULATE(
+        VALUES(Security[EmployeeID]),
+        Security[EmailID] = UserRole
+    )
+VAR UserPath = 
+    CALCULATE(
+        VALUES(DimEmployee[Path]),
+        DimEmployee[EmployeeID] = UserEmployeeID
+    )
+RETURN
+    PATHCONTAINS(DimEmployee[Path], UserEmployeeID)
+```
+
+**Prerequisite:** Create Path calculated column:
+```DAX
+// Calculated column in DimEmployee
+Path = PATH(DimEmployee[EmployeeID], DimEmployee[ManagerID])
+```
+
+### Pattern 4: Attribute-Based Access Control
+
+**Use Case:** Access based on multiple attributes (country AND department AND level)
+
+```DAX
+// Applied to FactSales table
+VAR UserRole = USERPRINCIPALNAME()
+
+// Get user's allowed attributes
+VAR UserCountries = 
+    CALCULATE(
+        VALUES(Security[Country]),
+        Security[EmailID] = UserRole
+    )
+VAR UserDepartments = 
+    CALCULATE(
+        VALUES(Security[Department]),
+        Security[EmailID] = UserRole
+    )
+VAR UserLevels = 
+    CALCULATE(
+        VALUES(Security[DataLevel]),
+        Security[EmailID] = UserRole
+    )
+
+// Apply filters
+RETURN
+    [CountryKey] IN 
+        SELECTCOLUMNS(
+            RELATEDTABLE(DimCountry),
+            "Key",
+            CALCULATE(
+                DimCountry[CountryKey],
+                DimCountry[Country] IN UserCountries
+            )
+        )
+    &&
+    [DepartmentKey] IN 
+        SELECTCOLUMNS(
+            RELATEDTABLE(DimDepartment),
+            "Key",
+            CALCULATE(
+                DimDepartment[DepartmentKey],
+                DimDepartment[Department] IN UserDepartments
+            )
+        )
+    &&
+    [DataLevel] IN UserLevels
+```
+
+**Security Table:**
+| EmailID | Country | Department | DataLevel |
+|---------|---------|------------|-----------|
+| user1@company.com | France | Sales | Summary |
+| user2@company.com | Germany | Sales | Detail |
+
+### Pattern 5: External User Access
+
+**Use Case:** External users (partners, vendors) with limited access
+
+```DAX
+// Applied to DimCustomer table
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserDomain = 
+    RIGHT(UserRole, LEN(UserRole) - SEARCH("@", UserRole, 1, 0))
+VAR IsExternal = UserDomain <> "mycompany.com"
+VAR ExternalCustomers = 
+    CALCULATE(
+        VALUES(Security[CustomerID]),
+        Security[EmailID] = UserRole
+    )
+VAR InternalCustomers = 
+    VALUES(DimCustomer[CustomerID])  // All customers
+
+RETURN
+    IF(
+        IsExternal,
+        [CustomerID] IN ExternalCustomers,  // Limited access
+        TRUE  // Full access for internal users
+    )
+```
+
+**Security Table (External Users Only):**
+| EmailID | CustomerID |
+|---------|------------|
+| partner@external.com | CUST001 |
+| partner@external.com | CUST002 |
+| vendor@supplier.com | CUST003 |
+
+---
+
+## Testing and Validation Framework
+
+### Automated Testing Strategy
+
+**Why Automated Testing?**
+- RLS errors can cause security breaches
+- Manual testing doesn't scale
+- Regression testing ensures changes don't break existing RLS
+- Confidence in deployments
+
+**Testing Approach:**
+
+#### 1. Unit Tests (DAX Expressions)
+
+**Test DAX Logic Separately:**
+```DAX
+// Test Measure: Verify Security Table Lookup
+TEST_SecurityLookup = 
+VAR TestUser = "user1@company.com"
+VAR Result = 
+    CALCULATE(
+        CONCATENATEX(
+            FILTER(Security, Security[EmailID] = TestUser),
+            Security[Country],
+            ", "
+        )
+    )
+RETURN
+    Result  // Should return: "France, Germany"
+```
+
+**Validation Rules:**
+- [ ] Security table has no duplicate email-country combinations
+- [ ] All emails are in valid format (contain @)
+- [ ] No NULL values in key columns
+- [ ] All countries in Security table exist in DimCountry
+
+**DAX Validation Measure:**
+```DAX
+// Measure: Security Table Validation
+Security_Validation = 
+VAR DuplicateCount = 
+    COUNTROWS(
+        FILTER(
+            ADDCOLUMNS(
+                VALUES(Security[EmailID]),
+                "CountPerEmail",
+                CALCULATE(COUNTROWS(Security))
+            ),
+            [CountPerEmail] > 1
+        )
+    )
+VAR InvalidEmails = 
+    COUNTROWS(
+        FILTER(
+            VALUES(Security[EmailID]),
+            NOT(CONTAINSSTRING(Security[EmailID], "@"))
+        )
+    )
+VAR NullValues = 
+    CALCULATE(
+        COUNTROWS(Security),
+        OR(
+            ISBLANK(Security[EmailID]),
+            ISBLANK(Security[Country])
+        )
+    )
+VAR TotalIssues = DuplicateCount + InvalidEmails + NullValues
+RETURN
+    IF(
+        TotalIssues = 0,
+        "✓ All Checks Passed",
+        "✗ Issues Found: " & TotalIssues
+    )
+```
+
+#### 2. Integration Tests (End-to-End)
+
+**Test Script Template:**
+```python
+# Python script using Power BI REST API
+
+import requests
+import json
+
+# Configuration
+workspace_id = "your-workspace-id"
+dataset_id = "your-dataset-id"
+access_token = "your-access-token"
+
+# Test cases
+test_users = [
+    {"email": "user1@company.com", "expected_countries": ["France"], "expected_row_count": 1500},
+    {"email": "user2@company.com", "expected_countries": ["Germany", "Spain"], "expected_row_count": 3200},
+    {"email": "admin@company.com", "expected_countries": "*", "expected_row_count": 15000}
+]
+
+def test_rls(user_email, expected_countries, expected_row_count):
+    """Test RLS for a specific user"""
+    
+    # Generate embed token with effective identity
+    url = f"https://api.powerbi.com/v1.0/myorg/groups/{workspace_id}/reports/{report_id}/GenerateToken"
+    
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    
+    body = {
+        "accessLevel": "View",
+        "identities": [
+            {
+                "username": user_email,
+                "roles": ["Dynamic_Country"],
+                "datasets": [dataset_id]
+            }
+        ]
+    }
+    
+    response = requests.post(url, headers=headers, json=body)
+    
+    if response.status_code == 200:
+        # Execute DAX query to verify filtering
+        query_url = f"https://api.powerbi.com/v1.0/myorg/groups/{workspace_id}/datasets/{dataset_id}/executeQueries"
+        
+        dax_query = {
+            "queries": [
+                {
+                    "query": "EVALUATE SUMMARIZE(FactSales, DimCountry[Country], \"Count\", COUNTROWS(FactSales))"
+                }
+            ],
+            "impersonatedUserName": user_email
+        }
+        
+        query_response = requests.post(query_url, headers=headers, json=dax_query)
+        
+        if query_response.status_code == 200:
+            results = query_response.json()
+            actual_countries = [row["DimCountry[Country]"] for row in results["results"][0]["tables"][0]["rows"]]
+            actual_row_count = sum([row["[Count]"] for row in results["results"][0]["tables"][0]["rows"]])
+            
+            # Validate results
+            if expected_countries == "*":
+                print(f"✓ {user_email}: Admin access verified ({actual_row_count} rows)")
+            elif set(actual_countries) == set(expected_countries) and abs(actual_row_count - expected_row_count) < 100:
+                print(f"✓ {user_email}: RLS working correctly")
+            else:
+                print(f"✗ {user_email}: RLS mismatch!")
+                print(f"  Expected: {expected_countries} ({expected_row_count} rows)")
+                print(f"  Actual: {actual_countries} ({actual_row_count} rows)")
+                return False
+        else:
+            print(f"✗ {user_email}: Query failed - {query_response.text}")
+            return False
+    else:
+        print(f"✗ {user_email}: Token generation failed - {response.text}")
+        return False
+    
+    return True
+
+# Run all tests
+print("=== RLS Automated Test Suite ===\n")
+all_passed = True
+for test_case in test_users:
+    passed = test_rls(test_case["email"], test_case["expected_countries"], test_case["expected_row_count"])
+    all_passed = all_passed and passed
+
+if all_passed:
+    print("\n✓ All RLS tests passed!")
+else:
+    print("\n✗ Some RLS tests failed. Review output above.")
+```
+
+#### 3. Performance Tests
+
+**Performance Benchmark Script:**
+```python
+import time
+import statistics
+
+def performance_test(user_email, iterations=10):
+    """Measure RLS query performance"""
+    
+    query_times = []
+    
+    for i in range(iterations):
+        start_time = time.time()
+        
+        # Execute query with RLS (pseudocode)
+        # result = execute_powerbi_query(user_email, dax_query)
+        
+        end_time = time.time()
+        query_time = (end_time - start_time) * 1000  # Convert to ms
+        query_times.append(query_time)
+    
+    avg_time = statistics.mean(query_times)
+    p95_time = statistics.quantiles(query_times, n=20)[18]  # 95th percentile
+    
+    print(f"{user_email}:")
+    print(f"  Average: {avg_time:.2f}ms")
+    print(f"  P95: {p95_time:.2f}ms")
+    
+    if p95_time > 3000:
+        print(f"  ⚠️ WARNING: Performance below threshold!")
+        return False
+    else:
+        print(f"  ✓ Performance acceptable")
+        return True
+
+# Test performance for different user types
+performance_test("user_with_1_country@company.com")
+performance_test("user_with_10_countries@company.com")
+performance_test("admin_with_all_data@company.com")
+```
+
+### Regression Testing
+
+**When to Run:**
+- Before every production deployment
+- After Security table schema changes
+- After data model changes
+- After DAX expression updates
+
+**Regression Test Checklist:**
+```markdown
+## RLS Regression Test - [Date]
+
+### Pre-Deployment Validation
+- [ ] All existing roles still exist in new version
+- [ ] DAX expressions syntactically valid
+- [ ] Security table schema unchanged (or migration plan exists)
+- [ ] Test users assigned to roles
+
+### Functional Tests
+- [ ] Test user 1: Sees expected data (France only)
+- [ ] Test user 2: Sees expected data (Germany, Spain)
+- [ ] Admin user: Sees all data
+- [ ] New user: Sees no data (not in Security table)
+- [ ] User with multiple roles: Sees union of permissions
+
+### Performance Tests
+- [ ] Average query time < 2 seconds
+- [ ] P95 query time < 3 seconds
+- [ ] No timeout errors
+- [ ] Dataset refresh completes < 30 minutes
+
+### Security Tests
+- [ ] User A cannot see User B's data
+- [ ] Removed user has no access
+- [ ] External user sees only assigned customers
+
+### Edge Cases
+- [ ] Special characters in email work
+- [ ] Long email addresses work
+- [ ] Case sensitivity handled correctly
+- [ ] Blank values in data handled gracefully
+
+### Post-Deployment Validation
+- [ ] Production monitoring shows no errors
+- [ ] User feedback collected (no access issues reported)
+- [ ] Performance metrics within acceptable range
+- [ ] Audit log shows expected access patterns
+
+**Test Results:** Pass / Fail
+**Tested By:** [Name]
+**Approved By:** [Name]
+```
+
+---
+
+## Documentation Best Practices
+
+### RLS Design Document Template
+
+```markdown
+# RLS Design Document: [Project Name]
+
+## Document Control
+- **Version:** 1.0
+- **Last Updated:** 2025-10-02
+- **Author:** [Name]
+- **Approvers:** [Names]
+- **Next Review Date:** 2026-01-02
+
+## Executive Summary
+Brief overview of RLS implementation, business justification, and expected outcomes.
+
+## Business Requirements
+### Data Access Rules
+- **Sales Representatives:** See only their assigned customers
+- **Regional Managers:** See all customers in their region
+- **Executive Team:** See all data
+- **External Partners:** See only specific customers
+
+### Compliance Requirements
+- GDPR compliance required
+- HIPAA not applicable
+- SOC 2 Type II audit requirements
+- Data retention: 7 years
+
+## Technical Design
+
+### Data Model
+[Diagram or description of tables, relationships, RLS filter flow]
+
+### Security Table Schema
+| Column Name | Data Type | Description | Source |
+|-------------|-----------|-------------|--------|
+| EmailID | Text | User email (UPN format) | Azure AD |
+| CustomerID | Integer | Allowed customer ID | CRM System |
+| Region | Text | User's region | HR System |
+| AccessLevel | Text | Access level (Rep/Manager/Executive) | Manual |
+
+### RLS Roles
+#### Role 1: Sales_Access
+- **Purpose:** Filter data by assigned customers
+- **Filter Applied To:** DimCustomer table
+- **DAX Expression:**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserCustomers = 
+    CALCULATE(
+        VALUES(Security[CustomerID]),
+        Security[EmailID] = UserRole
+    )
+RETURN
+    [CustomerID] IN UserCustomers
+```
+- **Test Users:** sales1@company.com, sales2@company.com
+
+#### Role 2: [Additional roles...]
+
+### Data Flow
+1. Azure AD → Security Table (nightly sync at 2 AM)
+2. Security Table refresh → Power BI Dataset (3 AM)
+3. Users access reports (RLS applied dynamically)
+
+### Performance Considerations
+- Expected concurrent users: 500
+- Dataset size: 5 GB
+- Target P95 query time: < 3 seconds
+- Optimizations: Aggregations configured, incremental refresh enabled
+
+## Testing Strategy
+### Test Scenarios
+1. User with 1 customer
+2. User with 50 customers
+3. Manager with 200 customers
+4. Executive with all customers (wildcard)
+5. New user not in Security table
+6. User removed from Security table
+
+### Test Schedule
+- Unit tests: With each code change
+- Integration tests: Before each deployment
+- Performance tests: Weekly
+- Security audit: Quarterly
+
+## Deployment Plan
+### Phase 1: Pilot (2 weeks)
+- Deploy to 10 test users
+- Collect feedback
+- Performance monitoring
+
+### Phase 2: Gradual Rollout (4 weeks)
+- Week 1: Sales team (100 users)
+- Week 2: Regional managers (20 users)
+- Week 3: Operations team (50 users)
+- Week 4: Executives (10 users)
+
+### Phase 3: Full Production
+- All remaining users
+- Retire old solution (if applicable)
+
+## Maintenance Plan
+### Regular Activities
+- **Daily:** Monitor error logs
+- **Weekly:** Review performance metrics
+- **Monthly:** User access audit
+- **Quarterly:** Security compliance review
+- **Annually:** Full RLS redesign review
+
+### Security Table Maintenance
+- **Owner:** IT Security Team
+- **Update Frequency:** Real-time (when possible), nightly at minimum
+- **Data Quality Checks:** Automated validation before refresh
+- **Escalation Process:** [Contact information]
+
+## Roles and Responsibilities
+| Role | Responsibility | Contact |
+|------|----------------|---------|
+| RLS Administrator | Overall RLS configuration | admin@company.com |
+| Security Table Owner | Security table data quality | security@company.com |
+| Power BI Admin | Workspace and capacity management | pbiadmin@company.com |
+| Help Desk | First-line user support | helpdesk@company.com |
+
+## Risk Assessment
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| User sees wrong data | Low | Critical | Thorough testing, automated validation |
+| Performance degradation | Medium | High | Performance monitoring, optimization plan |
+| Security table not refreshing | Low | High | Automated alerting, manual backup process |
+| User not in Security table | Medium | Medium | Clear communication, help desk training |
+
+## Appendix
+### Glossary
+- **RLS:** Row-Level Security
+- **UPN:** User Principal Name (Azure AD email)
+- **DAX:** Data Analysis Expressions
+
+### References
+- Power BI RLS Documentation: [URL]
+- Security Table Source: [URL]
+- Support Portal: [URL]
+
+### Change Log
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | 2025-10-02 | [Name] | Initial version |
+```
+
+---
+
+## Final Summary and Key Takeaways
+
+### Critical Success Factors
+
+1. **Start Simple**
+   - Begin with static RLS to understand concepts
+   - Move to dynamic RLS when scalability is needed
+   - Don't over-engineer initially
+
+2. **Security Table is King**
+   - Invest time in proper Security table design
+   - Automate updates from authoritative sources
+   - Maintain data quality rigorously
+
+3. **Test, Test, Test**
+   - Test every role with real users before deployment
+   - Include edge cases in testing
+   - Automate regression testing where possible
+
+4. **Monitor Performance**
+   - Set performance baselines
+   - Monitor query times in production
+   - Optimize proactively, not reactively
+
+5. **Document Everything**
+   - RLS design decisions
+   - Role definitions and purposes
+   - Troubleshooting procedures
+   - User assignment criteria
+
+### When to Use Which RLS Type
+
+**Use Static RLS When:**
+- < 10-20 distinct filter combinations
+- Infrequent changes to access rules
+- Simple, single-dimension filtering
+- Small, stable user base
+
+**Use Dynamic RLS When:**
+- > 20 filter combinations
+- Large or frequently changing user base
+- Multi-dimension filtering required
+- Need to scale to hundreds/thousands of users
+
+### Common Mistakes to Avoid
+
+> [!CAUTION]
+> These mistakes can lead to security breaches or system failures:
+
+1. **Not testing with actual user accounts** - Always test with real emails, not just "View as"
+2. **Forgetting to assign users to roles** - Role exists but no one assigned = no access
+3. **Complex DAX without need** - Keep it simple for performance and maintainability
+4. **No monitoring after deployment** - Set up alerts for RLS failures
+5. **Hardcoding values instead of using Security table** - Defeats purpose of dynamic RLS
+6. **Not documenting filter logic** - Future you will thank current you
+7. **Ignoring performance impact** - RLS adds overhead; plan for it
+8. **Not planning for exceptions** - Always have admin override mechanism
+
+### Quick Reference Commands
+
+**Power BI Desktop:**
+- Create role: Modeling → Manage Roles → Create
+- Test role: Modeling → View As → [Select role]
+- Model view: Left sidebar → Model icon
+- Performance Analyzer: View → Performance Analyzer
+
+**Power BI Service:**
+- Assign users: Dataset → ⋯ → Security → [Add users]
+- Test as role: In Security settings → Test as role
+- Activity log: Admin portal → Usage metrics
+
+**DAX Functions for RLS:**
+- `USERPRINCIPALNAME()` - Get logged-in user email
+- `USERNAME()` - Alternative (less common)
+- `CALCULATE()` - Context transition
+- `FILTER()` - Row-by-row filtering
+- `VALUES()` - Get distinct values
+- `IN` - Check membership in set
+
+### Resources for Further Learning
+
+- **Microsoft Learn:** Power BI Row-Level Security module
+- **SQLBI:** Advanced DAX patterns for RLS
+- **Power BI Community:** Forums for troubleshooting
+- **GitHub:** Sample RLS implementations and scripts
+- **Power BI Documentation:** Official RLS reference guide
+
+
+This comprehensive guide covers everything from basic static RLS to advanced multi-dimension dynamic RLS, including real-world scenarios, performance optimization, testing strategies, and best practices. Use it as a complete reference for implementing and maintaining Row-Level Security in Power BI.
