@@ -18,8 +18,6 @@
 > [!IMPORTANT]
 > RLS must be configured in Power BI Desktop before publishing to Power BI Service. Once published, roles can be managed and users assigned in the service.
 
----
-
 ## Types of RLS in Power BI
 
 ### 1. Static RLS
@@ -51,8 +49,6 @@
 
 > [!IMPORTANT]
 > Dynamic RLS requires a security table that maps user email addresses to their permitted data values (countries, products, departments, etc.).
-
----
 
 ## Static RLS Implementation
 
@@ -135,6 +131,7 @@
 1. After assigning users, click **Test as role**
 2. Select the role and optionally specify a user
 3. View the filtered report as that user would see it
+<img width="1919" height="999" alt="image" src="https://github.com/user-attachments/assets/f01f2301-ebc3-49a1-92bd-1a787f41cbea" />
 
 > [!IMPORTANT]
 > Users must be assigned to roles in Power BI Service. Publishing the report alone does not grant access—explicit role membership is required.
@@ -195,8 +192,6 @@
 * Fixed organizational structure
 * Infrequent changes to access requirements
 * Simple, single-dimension filtering needs
-
----
 
 ## Dynamic RLS Implementation
 
@@ -499,8 +494,6 @@ RETURN
 
 **More Complex DAX Required**: Would use PATHCONTAINS or hierarchical functions to traverse reporting structure.
 
----
-
 ## Best Practices for RLS
 
 ### Design Best Practices
@@ -598,8 +591,6 @@ RETURN
 * Restrict access to underlying Security data source
 * Use separate credentials for Security table if possible
 * Encrypt Security table at rest and in transit
-
----
 
 ## Troubleshooting Common RLS Issues
 
