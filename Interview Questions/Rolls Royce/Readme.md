@@ -927,3 +927,1024 @@ RETURN [Country] IN RLS
 
 Because both dimensions filter the same fact table, creating ambiguous filter paths. Power BI allows only one active relationship path from Security to Fact. Solution: Use DAX-based filtering instead of relationships.
 </details>
+
+### Advanced Questions
+
+**Q9: If a user is assigned to multiple RLS roles, what data do they see?**
+<details>
+<summary>Click to reveal answer</summary>
+
+They see the **union** (OR logic) of all data permitted by any role they belong to. For example, if Role A shows France and Role B shows Germany, the user sees both France and Germany data combined.
+</details>
+
+**Q10: What happens if a user is not assigned to any role?**
+<details>
+<summary>Click to reveal answer</summary>
+
+Users without role assignments can see **all data** in the report (no filtering applied). This can be used intentionally for admin/executive access or unintentionally as a security gap.
+</details>
+
+**Q11: Does RLS work in Power BI Desktop?**
+<details>
+<summary>Click to reveal answer</summary>
+
+Partially. USERPRINCIPALNAME() doesn't return actual user emails in Desktop, but you can test Dynamic RLS using "View as → Other user" by specifying an email. Static RLS works fully in Desktop testing.
+</details>
+
+**Q12: Can RLS prevent users from exporting data?**
+<details>
+<summary>Click to reveal answer</summary>
+
+No. RLS filters what data users see, but they can still export the filtered data they have access to. For additional protection, use sensitivity labels and information protection policies.
+</details>
+
+### Performance & Optimization
+
+**Q13: What impact does RLS have on report performance?**
+<details>
+<summary>Click to reveal answer</summary>
+
+RLS adds filter evaluation overhead, especially with:
+- Complex DAX expressions in roles
+- Large Security tables
+- DirectQuery connections
+- Multiple active relationships
+
+Best practice: Keep DAX simple, use star schema design, and test performance with realistic data volumes.
+</details>
+
+**Q14: Should the Security table have relationships to dimension tables?**
+<details>
+<summary>Click to reveal answer</summary>
+
+**For single-dimension Dynamic RLS**: Yes, create relationship from Security to Dimension with single-direction filtering (Security → Dimension).
+
+**For multi-dimension Dynamic RLS**: No relationships; use pure DAX expressions to avoid ambiguous filter paths.
+</details>
+
+**Q15: How can you optimize a large Security table?**
+<details>
+<summary>Click to reveal answer</summary>
+
+- Index columns in source database (EmailID, filter columns)
+- Remove unnecessary columns
+- Use integer keys instead of text where possible
+- Consider reducing granularity (group-level vs. individual-level)
+- Store in fast data source (Azure SQL vs. Excel)
+- Schedule optimal refresh times
+</details>
+
+### Troubleshooting Questions
+
+**Q16: RLS works in Desktop but not in Power BI Service. What's wrong?**
+<details>
+<summary>Click to reveal answer</summary>
+
+Common causes:
+1. **Users not assigned to role in Service** - Add them via Dataset → Security
+2. **Dataset not republished after changes** - Publish again from Desktop
+3. **Email format mismatch** - Security table emails must exactly match Azure AD UPN format
+4. **Browser cache** - Clear cache or try incognito mode
+</details>
+
+**Q17: How do you debug what USERPRINCIPALNAME() returns?**
+<details>
+<summary>Click to reveal answer</summary>
+
+Create a temporary measure:
+```DAX
+Debug UPN = USERPRINCIPALNAME()
+```
+Add it to a card visual, publish, and check what value appears when you view the report. Compare this to your Security table EmailID values.
+</details>
+
+**Q18: Why does a user see no data after RLS is applied?**
+<details>
+<summary>Click to reveal answer</summary>
+
+Possible causes:
+1. **No matching record in Security table** - User's email not in table
+2. **Email mismatch** - Different format (username@domain.com vs. username@Domain.com)
+3. **Blank/NULL values in Security table** - Filter criteria not met
+4. **Too restrictive filter** - Multiple filters with AND logic excluding all rows
+5. **Data type mismatch** - Security table Country value doesn't match Dimension Country exactly
+</details>
+
+### DAX & Expression Questions
+
+**Q19: Write the basic Dynamic RLS filter for filtering by Department.**
+<details>
+<summary>Click to reveal answer</summary>
+
+**Applied to Dim_Department table:**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR RLS = 
+    CALCULATE(
+        VALUES(Security[Department]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+RETURN
+    [Department] IN RLS
+```
+
+This:
+1. Gets current user's email
+2. Filters Security table to that user's rows
+3. Extracts Department values they can access
+4. Filters Dim_Department to those values
+</details>
+
+**Q20: What does the IN operator do in RLS DAX expressions?**
+<details>
+<summary>Click to reveal answer</summary>
+
+The `IN` operator checks if a column value exists in a table or list. Returns TRUE/FALSE.
+
+**Syntax**: `[Column] IN {value1, value2, ...}` or `[Column] IN TableVariable`
+
+**In RLS**: Filters dimension table to rows where column value matches any value in the RLS variable (which contains allowed values from Security table).
+
+Supports multiple values: If user has access to 3 countries, all 3 will pass the filter.
+</details>
+
+---
+
+## Real-World Implementation Scenarios
+
+### Scenario 1: Retail Chain with Regional Managers
+
+**Business Requirement:**
+- 500 stores across 50 states
+- Regional managers oversee 5-10 states each
+- 10 regional managers total
+- Each manager sees only their states' sales data
+- CEO sees all data
+
+**Solution Design:**
+
+**Security Table Structure:**
+```
+| EmailID                  | State      |
+|--------------------------|------------|
+| west.manager@retail.com  | CA         |
+| west.manager@retail.com  | NV         |
+| west.manager@retail.com  | OR         |
+| west.manager@retail.com  | WA         |
+| central.manager@retail.com| TX        |
+| central.manager@retail.com| OK        |
+| ceo@retail.com           | *          |
+```
+
+**Model Design:**
+```
+Security Table (no relationships)
+        ↓ (DAX filter)
+    Dim_State
+        ↓
+    Fact_Sales
+```
+
+**RLS Role: Regional_Access**
+
+**DAX Filter on Dim_State:**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserStates = 
+    CALCULATE(
+        VALUES(Security[State]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR HasFullAccess = 
+    COUNTROWS(FILTER(UserStates, Security[State] = "*")) > 0
+RETURN
+    IF(
+        HasFullAccess,
+        TRUE,  // CEO sees all
+        [State] IN UserStates  // Managers see their states
+    )
+```
+
+**Benefits:**
+- One role handles all 10 managers + CEO
+- Adding new managers = adding rows to Security table (no republish)
+- Manager transfers = updating Security table rows
+- Easy to audit: query Security table to see access rights
+
+### Scenario 2: Healthcare Provider with HIPAA Compliance
+
+**Business Requirement:**
+- Patient data must be restricted by assigned care team
+- Doctors see their patients only
+- Nurses see patients on their ward
+- Administrators see aggregate data (no patient details)
+- Strict compliance with data privacy regulations
+
+**Solution Design:**
+
+**Security Table Structure:**
+```
+| EmailID              | AccessType | WardID | DoctorID | PatientID |
+|----------------------|------------|--------|----------|-----------|
+| dr.smith@hospital.com| Doctor     | NULL   | D001     | NULL      |
+| nurse.jones@hospital.com| Nurse   | W101   | NULL     | NULL      |
+| admin@hospital.com   | Admin      | NULL   | NULL     | NULL      |
+```
+
+**Patient Table (in model):**
+```
+| PatientID | Name    | WardID | PrimaryDoctorID |
+|-----------|---------|--------|-----------------|
+| P001      | Patient1| W101   | D001            |
+| P002      | Patient2| W102   | D002            |
+```
+
+**RLS Role: Healthcare_Access**
+
+**DAX Filter on Patient Table:**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserAccessType = 
+    CALCULATE(
+        VALUES(Security[AccessType]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR UserWard = 
+    CALCULATE(
+        VALUES(Security[WardID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR UserDoctor = 
+    CALCULATE(
+        VALUES(Security[DoctorID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+RETURN
+    SWITCH(
+        UserAccessType,
+        "Doctor", [PrimaryDoctorID] = UserDoctor,
+        "Nurse", [WardID] = UserWard,
+        "Admin", FALSE  // Admins use separate aggregate report
+    )
+```
+
+**Additional Security Measures:**
+- Separate report for administrators (aggregate data only, no patient details)
+- Sensitivity labels on patient-level reports
+- Audit logging enabled
+- Regular access reviews (quarterly)
+- Row-level encryption on source database
+
+> [!CAUTION]
+> For healthcare and other highly regulated industries, RLS should be part of a comprehensive security strategy including encryption, audit logging, and regular compliance reviews.
+
+### Scenario 3: Multi-Tenant SaaS Application
+
+**Business Requirement:**
+- Single Power BI report embedded in SaaS application
+- 1,000+ customer tenants
+- Each tenant sees only their own data
+- No tenant can see another tenant's data
+- Performance must be excellent (< 2 second load time)
+
+**Solution Design:**
+
+**Security Table Structure:**
+```
+| EmailID                    | TenantID | SubscriptionLevel |
+|----------------------------|----------|-------------------|
+| user1@tenant-a.com         | TENANT_A | Premium           |
+| user2@tenant-a.com         | TENANT_A | Premium           |
+| user1@tenant-b.com         | TENANT_B | Standard          |
+```
+
+**Model Optimization:**
+- **Import Mode** (not DirectQuery) for best performance
+- **Aggregation Tables** for common queries
+- **Partitioning** by TenantID in source database
+- **Incremental Refresh** configured
+
+**RLS Role: Tenant_Isolation**
+
+**DAX Filter on Dim_Customer:**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserTenant = 
+    CALCULATE(
+        VALUES(Security[TenantID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+RETURN
+    [TenantID] = UserTenant
+```
+
+**Embedding Strategy:**
+- Use **Embed for your customers** (app owns data)
+- Generate embed tokens with RLS identity (TenantID)
+- Token lifetime: 1 hour (balance security and performance)
+- Cache embed tokens application-side
+
+**Performance Optimizations:**
+1. **Indexed Columns**: TenantID indexed in all tables
+2. **Star Schema**: Clean dimension-fact relationships
+3. **Measure Optimization**: Pre-aggregated measures
+4. **Composite Models**: Import for dimensions, DirectQuery for large fact
+5. **Query Reduction**: Limit visuals per page (< 15)
+
+**Monitoring:**
+- Performance metrics tracked per tenant
+- Slow queries flagged automatically
+- Regular capacity usage reviews
+- Tenant data size limits enforced
+
+### Scenario 4: Financial Services with Client-Advisor Model
+
+**Business Requirement:**
+- Financial advisors see their assigned clients' portfolio data
+- Clients see only their own portfolio (self-service portal)
+- Compliance officers see all data
+- Branch managers see all advisors in their branch
+- Regional directors see all branches in their region
+
+**Solution Design:**
+
+**Security Table Structure:**
+```
+| EmailID                | Role           | BranchID | AdvisorID | ClientID | RegionID |
+|------------------------|----------------|----------|-----------|----------|----------|
+| advisor1@firm.com      | Advisor        | BR001    | ADV001    | NULL     | NULL     |
+| client1@email.com      | Client         | NULL     | NULL      | CLI001   | NULL     |
+| manager1@firm.com      | BranchManager  | BR001    | NULL      | NULL     | NULL     |
+| director1@firm.com     | RegionalDir    | NULL     | NULL      | NULL     | REG001   |
+| compliance@firm.com    | Compliance     | NULL     | NULL      | NULL     | NULL     |
+```
+
+**Relationship Table (in model):**
+```
+| ClientID | AdvisorID | BranchID | RegionID |
+|----------|-----------|----------|----------|
+| CLI001   | ADV001    | BR001    | REG001   |
+| CLI002   | ADV001    | BR001    | REG001   |
+| CLI003   | ADV002    | BR002    | REG001   |
+```
+
+**RLS Role: FinancialServices_Access**
+
+**DAX Filter on Client Table:**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserRoleType = 
+    CALCULATE(
+        VALUES(Security[Role]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR UserBranch = 
+    CALCULATE(
+        VALUES(Security[BranchID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR UserAdvisor = 
+    CALCULATE(
+        VALUES(Security[AdvisorID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR UserClient = 
+    CALCULATE(
+        VALUES(Security[ClientID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+VAR UserRegion = 
+    CALCULATE(
+        VALUES(Security[RegionID]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+RETURN
+    SWITCH(
+        UserRoleType,
+        "Client", [ClientID] = UserClient,
+        "Advisor", [AdvisorID] = UserAdvisor,
+        "BranchManager", [BranchID] = UserBranch,
+        "RegionalDir", [RegionID] = UserRegion,
+        "Compliance", TRUE,  // See all data
+        FALSE  // Default: no access
+    )
+```
+
+**Audit & Compliance Features:**
+- All data access logged with user identity and timestamp
+- Quarterly access reviews required
+- Automated alerts for unusual access patterns
+- Separate audit report showing who accessed what data
+- Data masking for sensitive fields (SSN, account numbers) except for Compliance role
+
+**Object-Level Security (Complementary to RLS):**
+
+**Sensitive Measure (visible only to Compliance):**
+```DAX
+Client SSN = 
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserRoleType = 
+    CALCULATE(
+        VALUES(Security[Role]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+RETURN
+    IF(
+        UserRoleType = "Compliance",
+        SELECTEDVALUE(Client[SSN]),
+        "***-**-****"  // Masked for non-Compliance users
+    )
+```
+
+---
+
+## Integration with Other Power BI Features
+
+### RLS and Power BI Apps
+
+**How RLS Works in Apps:**
+- Apps respect RLS configured on underlying datasets
+- Users must be assigned to roles even if they have app access
+- App permissions + RLS = combined security
+
+**Publishing Workflow:**
+1. Configure RLS in dataset
+2. Assign users to roles
+3. Create app from workspace
+4. Add users to app audience
+5. Users need BOTH app access AND role membership
+
+> [!IMPORTANT]
+> App access alone doesn't grant data visibility. Users must be assigned to appropriate RLS roles separately.
+
+**Best Practice for Apps:**
+- Use Azure AD groups for both app access and RLS roles
+- Sync group membership regularly
+- Document which groups map to which roles
+- Test with representative users before general release
+
+### RLS and Dataflows
+
+**Scenario**: Using dataflows as data source with RLS downstream
+
+**Considerations:**
+- RLS applied to dataset, not dataflow
+- Dataflow loads all data; RLS filters during report consumption
+- Security table can come from same or different dataflow
+- Schedule dataflow refresh before dataset refresh
+
+**Example Architecture:**
+```
+Dataflow 1: Business Data (Sales, Products, Customers)
+    ↓
+Dataflow 2: Security Table (User-to-Data Mappings)
+    ↓
+Power BI Dataset (RLS configured here)
+    ↓
+Power BI Report (RLS enforced)
+```
+
+### RLS and Paginated Reports
+
+**RLS Support in Paginated Reports:**
+- Paginated reports respect RLS when connected to Power BI datasets
+- Must explicitly pass user context using Power BI dataset connection
+- DirectQuery to SQL: Implement RLS at SQL level instead
+
+**Configuration:**
+1. Create paginated report connected to Power BI dataset
+2. Use Power BI dataset as data source (not SQL directly)
+3. RLS automatically applies based on logged-in user
+4. Test with different user identities
+
+**Limitations:**
+- Email subscriptions run with subscription owner's identity (not recipient's)
+- Data-driven subscriptions can include recipient-specific filtering
+
+### RLS and Power BI Embedded
+
+**Embedding Scenarios:**
+
+**Scenario 1: Embed for Your Organization**
+- Users authenticate with Azure AD
+- USERPRINCIPALNAME() returns their actual email
+- RLS works exactly like Power BI Service
+- Assign users to roles in dataset security
+
+**Scenario 2: Embed for Your Customers (App Owns Data)**
+- Users don't have Power BI licenses
+- Application passes effective identity to Power BI
+- Must specify username and roles in embed token
+
+**Embed Token with RLS:**
+```csharp
+var effectiveIdentity = new EffectiveIdentity(
+    username: "user1@tenant-a.com",
+    roles: new List<string> { "Tenant_Isolation" },
+    datasets: new List<string> { datasetId }
+);
+
+var embedToken = await client.Reports.GenerateTokenInGroupAsync(
+    workspaceId,
+    reportId,
+    new GenerateTokenRequest(
+        accessLevel: "View",
+        identities: new List<EffectiveIdentity> { effectiveIdentity }
+    )
+);
+```
+
+**Effective Identity Behavior:**
+- USERPRINCIPALNAME() returns the username specified in embed token
+- RLS evaluates based on this identity
+- Each embed token can have different identity
+
+> [!WARNING]
+> Application is responsible for authentication and authorization. Power BI trusts the identity provided in the embed token. Ensure your application properly authenticates users before generating tokens.
+
+### RLS and Excel "Analyze in Excel"
+
+**How It Works:**
+- "Analyze in Excel" respects RLS
+- User sees same filtered data as in Power BI Service
+- Creates pivot table/charts in Excel with RLS applied
+
+**Limitations:**
+- Requires Excel 2016 or later
+- Must install Power BI Publisher for Excel
+- ODC connection file includes user context
+- Cannot override RLS in Excel (security maintained)
+
+**Testing:**
+1. Open report in Power BI Service
+2. Click "Analyze in Excel" from report menu
+3. Download and open .odc file
+4. Verify data matches Power BI Service view
+5. Create pivot table—RLS remains enforced
+
+---
+
+## Security Best Practices & Compliance
+
+### Defense in Depth Strategy
+
+> [!IMPORTANT]
+> RLS should be one layer in a multi-layered security architecture, not the only security control.
+
+**Security Layers:**
+
+1. **Network Security**
+   - Azure Virtual Network integration
+   - Private endpoints for Power BI
+   - Firewall rules at data source level
+
+2. **Identity & Access Management**
+   - Azure AD authentication required
+   - Multi-factor authentication (MFA) enforced
+   - Conditional access policies
+   - Just-in-time (JIT) access for admins
+
+3. **Data Security**
+   - Encryption at rest (data sources)
+   - Encryption in transit (TLS 1.2+)
+   - Database-level security (in addition to RLS)
+   - Column-level security for sensitive fields
+
+4. **Application Security**
+   - RLS (row-level filtering)
+   - Sensitivity labels (Microsoft Information Protection)
+   - Export controls (disable if required)
+   - Workspace access controls
+
+5. **Monitoring & Auditing**
+   - Activity logs reviewed regularly
+   - Anomaly detection enabled
+   - Access reviews (quarterly minimum)
+   - Incident response plan documented
+
+### Data Governance Framework
+
+**RLS Governance Checklist:**
+
+- [ ] **Documentation**
+  - RLS design document maintained
+  - Role definitions documented
+  - Data classification policy established
+  - User access matrix current
+
+- [ ] **Access Management**
+  - Role assignment process defined
+  - Approval workflow implemented
+  - Onboarding/offboarding procedures
+  - Regular access reviews scheduled
+
+- [ ] **Monitoring**
+  - Activity monitoring configured
+  - Audit log retention policy set
+  - Alert rules for suspicious activity
+  - Dashboard showing RLS usage metrics
+
+- [ ] **Testing**
+  - Test plan documented
+  - Test cases for each role
+  - Automated testing where possible
+  - Penetration testing periodically
+
+- [ ] **Compliance**
+  - Regulatory requirements identified (GDPR, HIPAA, etc.)
+  - Compliance gaps addressed
+  - Regular compliance audits
+  - Data subject access request (DSAR) process
+
+### Audit Logging for RLS
+
+**What to Log:**
+- User identity accessing report
+- Timestamp of access
+- Report/dataset accessed
+- Filters applied (from RLS)
+- Data exported (if allowed)
+- Role memberships at time of access
+
+**Implementation Options:**
+
+**Option 1: Power BI Activity Log**
+```powershell
+# PowerShell script to extract activity logs
+Get-PowerBIActivityEvent -StartDateTime '2024-01-01' -EndDateTime '2024-01-31' | 
+    Where-Object {$_.Activity -eq 'ViewReport'} |
+    Select-Object UserId, Activity, ItemName, DatasetName, Timestamp
+```
+
+**Option 2: Azure Log Analytics**
+- Connect Power BI to Azure Log Analytics
+- Create custom queries for RLS-related events
+- Set up alerts for anomalies
+- Build compliance dashboard
+
+**Option 3: Source Database Logging**
+- Implement auditing at SQL Server level
+- Use temporal tables for change tracking
+- Log all data access with user context
+- Correlate with Power BI activity
+
+**Sample Audit Query:**
+```sql
+SELECT 
+    audit_log.UserId,
+    audit_log.AccessTime,
+    audit_log.ReportName,
+    audit_log.FilteredValues,
+    security_table.EmailID,
+    security_table.AllowedCountries
+FROM AuditLog audit_log
+INNER JOIN SecurityTable security_table
+    ON audit_log.UserId = security_table.EmailID
+WHERE audit_log.AccessTime BETWEEN @StartDate AND @EndDate
+ORDER BY audit_log.AccessTime DESC
+```
+
+### GDPR Compliance Considerations
+
+**Right to Access (DSAR):**
+- Document which reports contain personal data
+- Ability to identify all data visible to specific user
+- Export user's RLS-filtered view for verification
+
+**Right to Erasure:**
+- Process to remove user from Security table
+- Verify user removed from all role assignments
+- Archive or delete data subject's records
+
+**Right to Data Portability:**
+- Allow users to export their filtered data
+- Provide data in machine-readable format (CSV, Excel)
+
+**Data Minimization:**
+- Only include necessary user data in Security table
+- Regularly review and remove obsolete access grants
+- Limit data retention periods
+
+**Privacy by Design:**
+- RLS built into reports from inception
+- Default to most restrictive access
+- Explicit consent for broader access
+
+---
+
+## Performance Optimization Deep Dive
+
+### Query Performance Analysis
+
+**Using Performance Analyzer:**
+
+1. **In Power BI Desktop:**
+   - View tab → Performance Analyzer → Start Recording
+   - Apply RLS: View as → Select role
+   - Interact with report (filters, slicers, page navigation)
+   - Stop Recording and review results
+
+2. **Key Metrics:**
+   - DAX query time
+   - Visual display time
+   - Other time
+   - Total time per visual
+
+3. **Identify Bottlenecks:**
+   - Long DAX query times → Optimize RLS expressions or model
+   - Long visual display times → Reduce visual complexity
+   - Consistent slowness → Data volume or relationship issues
+
+**Performance Analyzer Example Output:**
+```
+Visual: Sales by Country Table
+├─ DAX Query: 2,450 ms  ← High! Investigate RLS filter
+├─ Visual Display: 150 ms
+└─ Other: 50 ms
+Total: 2,650 ms
+
+Visual: Sales by Product Chart
+├─ DAX Query: 380 ms  ← Good performance
+├─ Visual Display: 120 ms
+└─ Other: 45 ms
+Total: 545 ms
+```
+
+> [!WARNING]
+> DAX query times over 1,000ms indicate performance problems. Investigate RLS expressions, relationships, and data model design.
+
+### Optimization Techniques
+
+#### Technique 1: Simplify RLS DAX
+
+**Before (Complex):**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR UserCountries = 
+    CALCULATETABLE(
+        DISTINCT(Security[Country]),
+        FILTER(
+            ALL(Security),
+            Security[EmailID] = UserRole
+        )
+    )
+VAR Result = 
+    FILTER(
+        VALUES(DimCountry[Country]),
+        DimCountry[Country] IN UserCountries
+    )
+RETURN
+    COUNTROWS(Result) > 0
+```
+
+**After (Simplified):**
+```DAX
+VAR UserRole = USERPRINCIPALNAME()
+VAR RLS = 
+    CALCULATE(
+        VALUES(Security[Country]),
+        FILTER(Security, Security[EmailID] = UserRole)
+    )
+RETURN
+    [Country] IN RLS
+```
+
+**Impact**: 40-60% reduction in evaluation time
+
+#### Technique 2: Use Integer Keys Instead of Text
+
+**Before:**
+```
+Security Table:
+| EmailID | Country  |
+|---------|----------|
+| user1   | Germany  |
+
+DimCountry:
+| Country | Sales |
+|---------|-------|
+| Germany | 1000  |
+```
+
+**After:**
+```
+Security Table:
+| EmailID | CountryKey |
+|---------|------------|
+| user1   | 101        |
+
+DimCountry:
+| CountryKey | Country | Sales |
+|------------|---------|-------|
+| 101        | Germany | 1000  |
+```
+
+**RLS Filter Changed From:**
+```DAX
+[Country] IN RLS  // Text comparison
+```
+
+**To:**
+```DAX
+[CountryKey] IN RLS  // Integer comparison (faster)
+```
+
+**Impact**: 20-30% faster filtering, especially with large dimension tables
+
+#### Technique 3: Pre-Aggregate Data
+
+**Scenario**: Dashboard shows summary metrics (Total Sales, Average Order Value)
+
+**Without Aggregations:**
+- RLS filters millions of fact rows every query
+- Every user query processes full fact table
+- Slow performance, high resource usage
+
+**With Aggregations:**
+```
+Aggregation Table: Sales_By_Country_Month
+| CountryKey | YearMonth | TotalSales | OrderCount |
+|------------|-----------|------------|------------|
+| 101        | 202401    | 500000     | 1250       |
+| 102        | 202401    | 350000     | 875        |
+```
+
+**Configuration:**
+1. Create aggregation table at Country-Month grain
+2. Configure as aggregation in Power BI
+3. RLS applied to aggregation table (fewer rows)
+4. Queries automatically use aggregation when possible
+
+**Impact**: 5-10x faster queries for summary visuals
+
+#### Technique 4: Incremental Refresh with RLS
+
+**Challenge**: Large fact tables (100M+ rows) slow to refresh and query
+
+**Solution:**
+1. Configure incremental refresh on fact table
+2. Partition by date (e.g., monthly partitions)
+3. RLS filters partitions before evaluation
+4. Older data loaded once, newer data refreshed incrementally
+
+**Configuration:**
+- Modeling → Incremental Refresh → Configure policy
+- Refresh rows where Date is in last 12 months
+- Store 5 years of data
+- RLS applies across all partitions
+
+**Impact**: 80-90% reduction in refresh time, better query performance
+
+### Monitoring Performance in Production
+
+**Key Metrics to Track:**
+
+1. **Query Duration P95 (95th percentile)**
+   - Target: < 3 seconds for interactive reports
+   - Alert if exceeds 5 seconds consistently
+
+2. **Failed Queries**
+   - Target: < 0.1% failure rate
+   - Investigate timeouts and errors
+
+3. **Concurrent Users**
+   - Monitor peak usage times
+   - Plan capacity accordingly
+
+4. **Dataset Size**
+   - Track growth over time
+   - Optimize or archive before hitting limits
+
+5. **RLS-Specific Metrics:**
+   - Average rows per user (post-RLS filtering)
+   - Security table size and refresh duration
+   - Role assignment distribution
+
+**Monitoring Dashboard Example:**
+
+```DAX
+// Measure: Average Query Duration
+Avg Query Duration = 
+AVERAGE(ActivityLog[QueryDurationMs]) / 1000
+
+// Measure: % Slow Queries (> 3s)
+Slow Query Percentage = 
+VAR SlowQueries = 
+    COUNTROWS(FILTER(ActivityLog, ActivityLog[QueryDurationMs] > 3000))
+VAR TotalQueries = COUNTROWS(ActivityLog)
+RETURN
+DIVIDE(SlowQueries, TotalQueries, 0) * 100
+
+// Measure: Active Users with RLS
+Users With RLS = 
+DISTINCTCOUNT(ActivityLog[UserId])
+```
+
+---
+
+## Migration Strategies
+
+### Migrating from Static to Dynamic RLS
+
+**When to Migrate:**
+- Number of static roles exceeds 20-30
+- Frequent role changes required
+- New filter dimensions added
+- User management becoming unmanageable
+
+**Migration Process:**
+
+**Phase 1: Preparation (2-4 weeks)**
+
+1. **Document Current State**
+   - List all existing static roles
+   - Map users to roles
+   - Document filter criteria for each role
+   - Identify edge cases and exceptions
+
+2. **Design Security Table**
+   - Determine Security table structure
+   - Identify data source (SQL, Excel, SharePoint)
+   - Plan refresh schedule
+   - Design for future extensibility
+
+   **Example Mapping:**
+   ```
+   Static Role "France_Sales" (5 users) 
+   →
+   Security Table Rows:
+   | EmailID | Country | Department |
+   |---------|---------|------------|
+   | user1   | France  | Sales      |
+   | user2   | France  | Sales      |
+   | user3   | France  | Sales      |
+   | user4   | France  | Sales      |
+   | user5   | France  | Sales      |
+   ```
+
+3. **Build Security Table**
+   - Extract user assignments from existing roles
+   - Add additional context (department, region, etc.)
+   - Validate data quality (no duplicates, proper email format)
+   - Set up automated refresh
+
+**Phase 2: Implementation (1-2 weeks)**
+
+4. **Update Data Model**
+   - Import Security table
+   - Create relationships (or plan DAX approach)
+   - Test relationships in Desktop
+   - Validate filter propagation
+
+5. **Create Dynamic Roles**
+   - Build single dynamic role per dimension
+   - Use DAX expressions with USERPRINCIPALNAME()
+   - Test thoroughly with representative users
+   - Document DAX logic
+
+6. **Parallel Testing**
+   - Keep static roles active
+   - Add dynamic roles
+   - Assign small user group to dynamic roles
+   - Compare results (should be identical)
+   - Fix any discrepancies
+
+**Phase 3: Cutover (1 week)**
+
+7. **User Communication**
+   - Notify users of upcoming change
+   - Explain benefits (no functional change to them)
+   - Provide support contact information
+   - Schedule migration during low-usage period
+
+8. **Execute Migration**
+   - Publish updated dataset with dynamic roles
+   - Assign all users to appropriate dynamic roles
+   - Remove static role assignments
+   - Monitor for issues
+
+9. **Post-Migration**
+   - Verify all users have access
+   - Monitor performance metrics
+   - Collect user feedback
+   - Document lessons learned
+   - Delete old static roles after 30-day grace period
+
+**Rollback Plan:**
+- Keep static roles for 30 days
+- Document rollback procedure
+- Test rollback in non-production environment
+- Criteria for rollback (e.g., > 10% users affected)
+
+### Migrating RLS Across Environments
+
+**Scenario**: Promote RLS from Dev → Test → Production
+
+**Challenge**: Role memberships differ across environments
+
+**Solution: Parameterized Approach**
+
+**Development Environment:**
+- Create and test RLS roles
+- Use test user accounts
+- Security table points to dev data source
