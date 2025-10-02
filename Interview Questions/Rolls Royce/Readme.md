@@ -123,10 +123,12 @@
 2. Locate the dataset (not the report)
 3. Click the three dots (…) next to the dataset
 4. Select **Security**
-5. You'll see all roles created in Desktop
-6. Enter user email addresses in the role's text box
-7. Click **Add**
-8. Click **Save**
+   <img width="1919" height="999" alt="image" src="https://github.com/user-attachments/assets/53a85bd3-57a1-4e72-9933-1933f024bf0a" />
+
+6. You'll see all roles created in Desktop
+7. Enter user email addresses in the role's text box
+8. Click **Add**
+9. Click **Save**
 
 **Testing in Power BI Service:**
 1. After assigning users, click **Test as role**
