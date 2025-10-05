@@ -1,0 +1,7 @@
+## 73. **Prediction with Pre-Trained Model**  
+    ```DAX
+    Forecasted Sales = 
+    [Total Sales] * 1.05  // Placeholder for Azure ML integration
+    ```
+    *In real-world use, call Azure ML endpoints via Power Query.*
+
