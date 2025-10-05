@@ -1,0 +1,8 @@
+## 78. **Dynamic Tooltip Measure**  
+    ```DAX
+    Tooltip = 
+    "Sales: " & FORMAT([Total Sales], "$#,##0") & 
+    "\nGrowth: " & FORMAT([MoM Growth], "0.0%")
+    ```
+    *Creates rich tooltips using measure values.*
+
