@@ -1,0 +1,11 @@
+## 67. **Dynamic Row-Level Security by Measure**  
+    ```DAX
+    RLS Filter = 
+    IF(
+      [Total Sales] > 10000 || USERNAME() = "Admin",
+      1,
+      0
+    )
+    ```
+    *Combines RLS with measure logic for conditional access.*
+
