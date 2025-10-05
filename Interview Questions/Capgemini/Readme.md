@@ -1,22 +1,4 @@
-### 1. RLS Implementation
-
-**Static vs Dynamic RLS:**
-
-```Plain
-// Static RLS (hard-coded values)
-[Region] = "North"
-
-// Dynamic RLS (user-based)
-[Region] = LOOKUPVALUE(
-    UserSecurity[Region],
-    UserSecurity[Email],
-    USERPRINCIPALNAME()
-)
-```
-
-_Key Difference:_ Static RLS uses fixed values, while dynamic RLS references user attributes from a security table.
-
-### 2. Historical Data Handling
+### 1. Historical Data Handling
 
 **Solutions for Historical Analysis:**
 
@@ -30,7 +12,7 @@ RangeStart = \#datetime(2023,1,1,0,0,0)
 RangeEnd = \#datetime(2023,12,31,23,59,59)
 ```
 
-### 3. Multi-Fact Table Drill-Through
+### 2. Multi-Fact Table Drill-Through
 
 **Workaround Solution:**
 
@@ -47,7 +29,7 @@ SWITCH(
 
 _Design Tip:_ Use a dedicated drill-through page with bookmarks showing different fact table perspectives.
 
-### 4. Constraint Impacts
+### 3. Constraint Impacts
 
 **Primary Key Violation Scenario:**
 
@@ -57,7 +39,7 @@ _Design Tip:_ Use a dedicated drill-through page with bookmarks showing differen
     - Show many-to-many relationship warnings
     - Require `CROSSFILTER()` to enforce filtering
 
-### 5. License Identification Chart
+### 4. License Identification Chart
 
 |   |   |   |
 |---|---|---|
@@ -66,7 +48,7 @@ _Design Tip:_ Use a dedicated drill-through page with bookmarks showing differen
 |👤+💎|PPU|100GB models, 10TB storage|
 |🆓|Free|1GB models, 10GB storage|
 
-### 6. Unit Testing Framework
+### 5. Unit Testing Framework
 
 **Validation Process:**
 
@@ -89,7 +71,7 @@ CALCULATE(
 // Should return 45,678
 ```
 
-### 7. Automation Techniques
+### 6. Automation Techniques
 
 **Power Automate Integration Example:**
 
@@ -99,7 +81,7 @@ CALCULATE(
     2. Email to stakeholders
     3. Post notification to Teams channel
 
-### 8. Dual Mode Implementation
+### 7. Dual Mode Implementation
 
 **Composite Model Example:**
 
@@ -112,7 +94,7 @@ graph LR
 
 _Configuration:_ Set in Model View → Storage Mode
 
-### 9. Data Verification Methodology
+### 8. Data Verification Methodology
 
 **Three-Way Validation Process:**
 
@@ -130,7 +112,7 @@ RETURN DIVIDE(PBIcount, SourceCount, 0) - 1
 // Acceptable variance < 0.1%
 ```
 
-### 10. Advanced Testing Approach
+### 9. Advanced Testing Approach
 
 **Parameterized Testing Framework:**
 
@@ -148,7 +130,7 @@ These solutions demonstrate deep technical expertise while providing practical, 
 
 ---
 
-### 1. Can we use `USERNAME()` and `USERPRINCIPALNAME()` in static RLS?
+### 10. Can we use `USERNAME()` and `USERPRINCIPALNAME()` in static RLS?
 
 This question tests the understanding of Row-Level Security (RLS) types and the DAX functions used to implement them.
 
@@ -170,7 +152,7 @@ Here’s the difference between the two functions and how they are used in Dynam
 
 ---
 
-### 2. Does Power BI maintain/store historical data and how?
+### 11. Does Power BI maintain/store historical data and how?
 
 By itself, Power BI does **not** automatically maintain or store historical data.
 
@@ -186,7 +168,7 @@ However, there are two primary ways to _achieve_ historical data storage _with_ 
 
 ---
 
-### 3. Is it possible to create drill-down and drill-up on 3 fact tables?
+### 12. Is it possible to create drill-down and drill-up on 3 fact tables?
 
 Yes, this is possible, but it requires a correctly designed data model, specifically one that uses **conformed dimensions**.
 
@@ -207,7 +189,7 @@ For a more explicit navigation, you could also use Power BI's **Drillthrough** f
 
 ---
 
-### 4. If there are constraints applied on a table, does the Primary Key and Foreign Key affect in Power BI?
+### 13. If there are constraints applied on a table, does the Primary Key and Foreign Key affect in Power BI?
 
 This is a great question that distinguishes between database behavior and Power BI behavior.
 
@@ -221,7 +203,7 @@ Here's the detailed breakdown:
 
 ---
 
-### 5. If we are taking data from a DB where a table has 6k rows, and then the table gets truncated and now has only 1k rows, will Power BI still have all the 6k rows from the table after a refresh?
+### 14. If we are taking data from a DB where a table has 6k rows, and then the table gets truncated and now has only 1k rows, will Power BI still have all the 6k rows from the table after a refresh?
 
 No. After a **standard refresh** in Import mode, Power BI will only have the **1,000 rows**.
 
@@ -237,7 +219,7 @@ The only way to keep the old 6k rows would be if you had previously configured *
 
 ---
 
-### 6. How will you identify the type of license by looking at a workspace?
+### 15. How will you identify the type of license by looking at a workspace?
 
 You can identify the capacity type of a workspace (which is tied to licensing) by a simple visual cue in the Power BI Service:
 
@@ -246,7 +228,7 @@ You can identify the capacity type of a workspace (which is tied to licensing) b
 
 ---
 
-### 7. What is the size of a workspace?
+### 16. What is the size of a workspace?
 
 This question can be interpreted in two ways: "What are the size _limits_?" or "How do I _check_ the current size?"
 
@@ -255,7 +237,7 @@ This question can be interpreted in two ways: "What are the size _limits_?" or "
 - **Pro (Shared Capacity):** There is a **10 GB** storage limit _per user_, not per workspace. The most critical limit here is that any single published dataset (`.pbix` file) cannot exceed **1 GB**.
 - **Premium Capacity:** The limits are much higher and depend on the SKU. A P1 SKU, for example, comes with **100 TB** of total storage, and the maximum size for a single dataset can be up to **10 GB** (or even larger with the "Large Dataset Storage Format" enabled).
 
-**2. How to Check a Workspace's Current Size:**
+**17. How to Check a Workspace's Current Size:**
 
 - **For Admins:** The Power BI Admin Portal provides detailed metrics on workspace storage and usage across the entire tenant.
 - **For Workspace Admins:** Within the workspace settings, you can see some storage information, especially if it's a Premium workspace.
@@ -263,7 +245,7 @@ This question can be interpreted in two ways: "What are the size _limits_?" or "
 
 ---
 
-### 8. What is unit testing in Power BI?
+### 18. What is unit testing in Power BI?
 
 Unit testing in Power BI is the process of testing the smallest individual components ("units") of a report to ensure they work correctly and as intended. It's about validating the building blocks before testing the report as a whole.
 
@@ -276,9 +258,9 @@ The "units" in a Power BI report include:
 
 ---
 
-### 9. Do you do report validation? How do you do that?
+### 19. Do you do report validation? How do you do that?
 
-### 10. How will you cross-verify the data which is coming from the data source to the report?
+### 20. How will you cross-verify the data which is coming from the data source to the report?
 
 Yes, report validation is an absolutely critical step in my development process. These two questions are closely related, as cross-verification is the core of validation.
 
@@ -303,7 +285,7 @@ Here are the methods I use for cross-verification:
 
 ---
 
-### 11. Did you do any automation?
+### 21. Did you do any automation?
 
 Yes, automation is key to creating efficient and reliable BI solutions. I have implemented automation at several levels:
 
@@ -317,7 +299,7 @@ Yes, automation is key to creating efficient and reliable BI solutions. I have i
 
 ---
 
-### 12. What is dual mode?
+### 22. What is dual mode?
 
 **Dual** is a storage mode that can be applied to a table in a **Composite Model** in Power BI. A composite model is one that combines data from different storage modes (Import and DirectQuery).
 
